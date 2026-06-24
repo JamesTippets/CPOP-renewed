@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 510" font-family="Helvetica, Arial, sans-serif">
+  <rect x="1" y="1" width="678" height="508" rx="12" fill="#ffffff" stroke="#D3D1C7"/>
+  <path d="M13 1 h148 v508 h-148 a12 12 0 0 1 -12 -12 v-484 a12 12 0 0 1 12 -12 z" fill="#F1EFE8"/>
+  <line x1="161" y1="1" x2="161" y2="509" stroke="#D3D1C7"/>
+
+  <rect x="16" y="20" width="14" height="14" rx="3" fill="#E6F1FB" stroke="#85B7EB"/>
+  <text x="38" y="31" font-size="14" font-weight="500" fill="#2C2C2A">Loiter scan</text>
+
+  <rect x="10" y="54" width="142" height="30" rx="6" fill="#ffffff" stroke="#E5E4DF"/>
+  <rect x="22" y="63" width="12" height="12" rx="2" fill="#888780"/>
+  <text x="42" y="73" font-size="14" font-weight="500" fill="#2C2C2A">Dashboard</text>
+  <rect x="22" y="98" width="12" height="12" rx="2" fill="none" stroke="#B4B2A9"/>
+  <text x="42" y="108" font-size="14" fill="#5F5E5A">Catalog</text>
+  <rect x="22" y="132" width="12" height="12" rx="2" fill="none" stroke="#B4B2A9"/>
+  <text x="42" y="142" font-size="14" fill="#5F5E5A">Results</text>
+  <rect x="22" y="166" width="12" height="12" rx="2" fill="none" stroke="#B4B2A9"/>
+  <text x="42" y="176" font-size="14" fill="#5F5E5A">Configuration</text>
+
+  <text x="180" y="38" font-size="18" font-weight="500" fill="#2C2C2A">Detection run</text>
+  <rect x="566" y="22" width="96" height="22" rx="6" fill="#E6F1FB"/>
+  <text x="614" y="34" text-anchor="middle" font-size="11" fill="#185FA5">CelesTrak</text>
+
+  <g font-family="Helvetica, Arial, sans-serif">
+    <rect x="180" y="54" width="113" height="54" rx="6" fill="#F1EFE8"/>
+    <text x="192" y="73" font-size="12" fill="#5F5E5A">Objects</text>
+    <text x="192" y="97" font-size="22" font-weight="500" fill="#2C2C2A">28,431</text>
+    <rect x="303" y="54" width="113" height="54" rx="6" fill="#F1EFE8"/>
+    <text x="315" y="73" font-size="12" fill="#5F5E5A">Stale &gt;3d</text>
+    <text x="315" y="97" font-size="22" font-weight="500" fill="#2C2C2A">412</text>
+    <rect x="426" y="54" width="113" height="54" rx="6" fill="#F1EFE8"/>
+    <text x="438" y="73" font-size="12" fill="#5F5E5A">Decayed</text>
+    <text x="438" y="97" font-size="22" font-weight="500" fill="#2C2C2A">1,203</text>
+    <rect x="549" y="54" width="113" height="54" rx="6" fill="#F1EFE8"/>
+    <text x="561" y="73" font-size="12" fill="#5F5E5A">Last refresh</text>
+    <text x="561" y="95" font-size="14" font-weight="500" fill="#2C2C2A">09:12 MT</text>
+  </g>
+
+  <rect x="180" y="120" width="482" height="68" rx="10" fill="#ffffff" stroke="#E5E4DF"/>
+  <rect x="194" y="134" width="128" height="30" rx="6" fill="#F1EFE8" stroke="#B4B2A9" opacity="0.65"/>
+  <text x="258" y="149" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#2C2C2A">Run detection</text>
+  <rect x="336" y="142" width="14" height="14" rx="3" fill="#185FA5"/>
+  <path d="M339 149 l2 2 l5 -5" stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <text x="358" y="149" dominant-baseline="central" font-size="13" fill="#5F5E5A">Refresh catalog first</text>
+  <text x="194" y="178" dominant-baseline="central" font-size="11" fill="#888780">Config: 50 / 25 / 5 km · 15 / 5 / 1 min · 7 d · loiter ≥1 h · excursion 5 min</text>
+
+  <rect x="180" y="200" width="482" height="168" rx="10" fill="#ffffff" stroke="#E5E4DF"/>
+  <text x="194" y="222" dominant-baseline="central" font-size="14" font-weight="500" fill="#2C2C2A">Run in progress</text>
+  <rect x="582" y="210" width="66" height="24" rx="6" fill="#ffffff" stroke="#B4B2A9"/>
+  <text x="615" y="222" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#5F5E5A">Cancel</text>
+
+  <path d="M197 248 l3 3 l6 -7" stroke="#3B6D11" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="216" y="248" dominant-baseline="central" font-size="13" fill="#2C2C2A">Ingest</text>
+  <text x="302" y="248" dominant-baseline="central" font-size="13" fill="#5F5E5A">28,431 objects loaded</text>
+
+  <path d="M197 272 l3 3 l6 -7" stroke="#3B6D11" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="216" y="272" dominant-baseline="central" font-size="13" fill="#2C2C2A">Pre-filter</text>
+  <text x="302" y="272" dominant-baseline="central" font-size="13" fill="#5F5E5A">18,902 after exclusions + gating</text>
+
+  <circle cx="201" cy="296" r="3.5" fill="#185FA5"/>
+  <text x="216" y="296" dominant-baseline="central" font-size="13" fill="#2C2C2A">Coarse</text>
+  <rect x="300" y="293" width="200" height="6" rx="3" fill="#D3D1C7"/>
+  <rect x="300" y="293" width="92" height="6" rx="3" fill="#185FA5"/>
+  <text x="512" y="296" dominant-baseline="central" font-size="13" fill="#5F5E5A">142k → 318</text>
+
+  <circle cx="201" cy="320" r="4" fill="none" stroke="#B4B2A9"/>
+  <text x="216" y="320" dominant-baseline="central" font-size="13" fill="#B4B2A9">Fine</text>
+  <text x="302" y="320" dominant-baseline="central" font-size="13" fill="#B4B2A9">pending</text>
+
+  <circle cx="201" cy="344" r="4" fill="none" stroke="#B4B2A9"/>
+  <text x="216" y="344" dominant-baseline="central" font-size="13" fill="#B4B2A9">Detection</text>
+  <text x="302" y="344" dominant-baseline="central" font-size="13" fill="#B4B2A9">pending</text>
+
+  <text x="180" y="388" dominant-baseline="central" font-size="13" fill="#5F5E5A">Recent runs</text>
+  <rect x="180" y="398" width="482" height="96" rx="8" fill="#ffffff" stroke="#E5E4DF"/>
+  <line x1="180" y1="430" x2="662" y2="430" stroke="#E5E4DF"/>
+  <line x1="180" y1="462" x2="662" y2="462" stroke="#E5E4DF"/>
+
+  <text x="194" y="414" dominant-baseline="central" font-size="13" fill="#2C2C2A">Jun 16 · 16:30</text>
+  <text x="420" y="414" dominant-baseline="central" font-size="13" fill="#2C2C2A">3 events</text>
+  <text x="510" y="414" dominant-baseline="central" font-size="13" fill="#5F5E5A">3m 58s</text>
+  <rect x="590" y="405" width="62" height="18" rx="5" fill="#EAF3DE"/>
+  <text x="621" y="414" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3B6D11">complete</text>
+
+  <text x="194" y="446" dominant-baseline="central" font-size="13" fill="#2C2C2A">Jun 15 · 11:02</text>
+  <text x="420" y="446" dominant-baseline="central" font-size="13" fill="#2C2C2A">12 events</text>
+  <text x="510" y="446" dominant-baseline="central" font-size="13" fill="#5F5E5A">5m 20s</text>
+  <rect x="590" y="437" width="62" height="18" rx="5" fill="#EAF3DE"/>
+  <text x="621" y="446" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3B6D11">complete</text>
+
+  <text x="194" y="478" dominant-baseline="central" font-size="13" fill="#2C2C2A">Jun 13 · 08:45</text>
+  <text x="420" y="478" dominant-baseline="central" font-size="13" fill="#2C2C2A">5 events</text>
+  <text x="510" y="478" dominant-baseline="central" font-size="13" fill="#5F5E5A">4m 02s</text>
+  <rect x="590" y="469" width="62" height="18" rx="5" fill="#EAF3DE"/>
+  <text x="621" y="478" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3B6D11">complete</text>
+</svg>

@@ -1,0 +1,21 @@
+{
+  "cascade": {
+    "horizonDays": 7,
+    "coarse":    { "stepMinutes": 15, "thresholdKm": 50 },
+    "fine":      { "stepMinutes": 5,  "thresholdKm": 25 },
+    "detection": { "stepMinutes": 1,  "thresholdKm": 5 },
+    "buffers":   { "coarseToFineMinutes": 30, "fineToDetectionMinutes": 10 },
+    "loiter":    { "minDurationMinutes": 60, "excursionAllowanceMinutes": 5 }
+  },
+  "preFilter": {
+    "excludeDebris": false,
+    "regimeScope": "ALL",
+    "excludedCountries": [],
+    "excludedGroups": ["starlink"],
+    "excludedIds": []
+  },
+  "acquisition": {
+    "source": "celestrak",
+    "refreshBeforeRun": true
+  }
+}

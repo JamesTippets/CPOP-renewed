@@ -1,0 +1,9 @@
+# Default owners
+* @your-team
+
+# Cascade parameters and detection logic require review
+/src/LoiterScan.Engine/      @your-team
+/config/default-config.json  @your-team
+
+# Persistence schema (migrations) require review
+/src/LoiterScan.Data/        @your-team

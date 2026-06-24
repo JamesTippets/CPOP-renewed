@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LoiterScan.Core\LoiterScan.Core.csproj" />
+    <ProjectReference Include="..\LoiterScan.Data\LoiterScan.Data.csproj" />
+  </ItemGroup>
+</Project>

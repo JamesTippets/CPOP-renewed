@@ -1,0 +1,81 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoiterScan.Core", "src\LoiterScan.Core\LoiterScan.Core.csproj", "{48667212-CD02-496F-BC2B-647A2A329217}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoiterScan.Propagation", "src\LoiterScan.Propagation\LoiterScan.Propagation.csproj", "{FFCE8438-D5A8-4791-8513-8B998F784224}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoiterScan.Acquisition", "src\LoiterScan.Acquisition\LoiterScan.Acquisition.csproj", "{C2FF4D21-2B0A-4DF4-81A5-9D2FDCD62670}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoiterScan.Data", "src\LoiterScan.Data\LoiterScan.Data.csproj", "{A7ACBCB9-88B0-4172-9A48-9B7ED1EF04CC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoiterScan.Engine", "src\LoiterScan.Engine\LoiterScan.Engine.csproj", "{E273BABF-7869-4642-B01F-AECB658DB1F3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoiterScan.Analytics", "src\LoiterScan.Analytics\LoiterScan.Analytics.csproj", "{109301D8-84BA-41C8-84D6-8ED0DC8E69CC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoiterScan.App", "src\LoiterScan.App\LoiterScan.App.csproj", "{614E8BB1-AEFA-4F93-9EBA-D664CD21CBB7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoiterScan.Engine.Tests", "tests\LoiterScan.Engine.Tests\LoiterScan.Engine.Tests.csproj", "{69453510-804C-4306-8B58-3E2A95300AE6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoiterScan.Propagation.Tests", "tests\LoiterScan.Propagation.Tests\LoiterScan.Propagation.Tests.csproj", "{15F75CCB-D211-43EA-87B6-C1450DCEC148}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoiterScan.Acquisition.Tests", "tests\LoiterScan.Acquisition.Tests\LoiterScan.Acquisition.Tests.csproj", "{21810D7A-01D5-4FAF-B6CC-920D061F99E8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoiterScan.Analytics.Tests", "tests\LoiterScan.Analytics.Tests\LoiterScan.Analytics.Tests.csproj", "{1308EECE-89BC-4E50-B0CA-FA529ED24A8C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{48667212-CD02-496F-BC2B-647A2A329217}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48667212-CD02-496F-BC2B-647A2A329217}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48667212-CD02-496F-BC2B-647A2A329217}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48667212-CD02-496F-BC2B-647A2A329217}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFCE8438-D5A8-4791-8513-8B998F784224}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFCE8438-D5A8-4791-8513-8B998F784224}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFCE8438-D5A8-4791-8513-8B998F784224}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFCE8438-D5A8-4791-8513-8B998F784224}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2FF4D21-2B0A-4DF4-81A5-9D2FDCD62670}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2FF4D21-2B0A-4DF4-81A5-9D2FDCD62670}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2FF4D21-2B0A-4DF4-81A5-9D2FDCD62670}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2FF4D21-2B0A-4DF4-81A5-9D2FDCD62670}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7ACBCB9-88B0-4172-9A48-9B7ED1EF04CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7ACBCB9-88B0-4172-9A48-9B7ED1EF04CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7ACBCB9-88B0-4172-9A48-9B7ED1EF04CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7ACBCB9-88B0-4172-9A48-9B7ED1EF04CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E273BABF-7869-4642-B01F-AECB658DB1F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E273BABF-7869-4642-B01F-AECB658DB1F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E273BABF-7869-4642-B01F-AECB658DB1F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E273BABF-7869-4642-B01F-AECB658DB1F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{109301D8-84BA-41C8-84D6-8ED0DC8E69CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{109301D8-84BA-41C8-84D6-8ED0DC8E69CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{109301D8-84BA-41C8-84D6-8ED0DC8E69CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{109301D8-84BA-41C8-84D6-8ED0DC8E69CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{614E8BB1-AEFA-4F93-9EBA-D664CD21CBB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{614E8BB1-AEFA-4F93-9EBA-D664CD21CBB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{614E8BB1-AEFA-4F93-9EBA-D664CD21CBB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{614E8BB1-AEFA-4F93-9EBA-D664CD21CBB7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69453510-804C-4306-8B58-3E2A95300AE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69453510-804C-4306-8B58-3E2A95300AE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69453510-804C-4306-8B58-3E2A95300AE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69453510-804C-4306-8B58-3E2A95300AE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15F75CCB-D211-43EA-87B6-C1450DCEC148}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15F75CCB-D211-43EA-87B6-C1450DCEC148}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15F75CCB-D211-43EA-87B6-C1450DCEC148}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15F75CCB-D211-43EA-87B6-C1450DCEC148}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21810D7A-01D5-4FAF-B6CC-920D061F99E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21810D7A-01D5-4FAF-B6CC-920D061F99E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21810D7A-01D5-4FAF-B6CC-920D061F99E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21810D7A-01D5-4FAF-B6CC-920D061F99E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1308EECE-89BC-4E50-B0CA-FA529ED24A8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1308EECE-89BC-4E50-B0CA-FA529ED24A8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1308EECE-89BC-4E50-B0CA-FA529ED24A8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1308EECE-89BC-4E50-B0CA-FA529ED24A8C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
