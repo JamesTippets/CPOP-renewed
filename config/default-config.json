@@ -16,6 +16,6 @@
   },
   "acquisition": {
     "source": "celestrak",
-    "refreshBeforeRun": true
+    "refreshBeforeRun": false
   }
 }

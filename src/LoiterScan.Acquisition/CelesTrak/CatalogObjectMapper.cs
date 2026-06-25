@@ -40,7 +40,7 @@ internal static class CatalogObjectMapper
 
         // --- SATCAT fields (graceful on missing join) ---
         string? owner      = satcat?.Country;
-        string? objectType = satcat?.ObjectType;
+        string? objectType = satcat?.ObjectType ?? omm.ObjectType;
         bool    isDebris   = objectType != null &&
                              objectType.Contains("DEBRIS", StringComparison.OrdinalIgnoreCase);
         DateTime? decayDate = ParseDecay(satcat?.Decay);

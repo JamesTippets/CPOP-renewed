@@ -19,6 +19,7 @@ internal sealed class OmmRecord
     [JsonPropertyName("MEAN_MOTION_DOT")]  public double MeanMotionDot   { get; init; }
     [JsonPropertyName("MEAN_MOTION_DDOT")] public double MeanMotionDdot  { get; init; }
     [JsonPropertyName("EPHEMERIS_TYPE")] public int     EphemerisType    { get; init; }
+    [JsonPropertyName("OBJECT_TYPE")]    public string? ObjectType       { get; init; }
     [JsonPropertyName("CLASSIFICATION_TYPE")] public string? Classification { get; init; }
     [JsonPropertyName("ELEMENT_SET_NO")] public int     ElementSetNo     { get; init; }
     [JsonPropertyName("REV_AT_EPOCH")]  public int      RevAtEpoch       { get; init; }

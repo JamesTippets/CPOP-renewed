@@ -6,7 +6,11 @@ namespace LoiterScan.Acquisition.CelesTrak;
 /// <summary>Parses the CelesTrak SATCAT JSON array into a dictionary keyed by NORAD catalog ID.</summary>
 internal static class CelesTrakSatcatParser
 {
-    private static readonly JsonSerializerOptions _opts = new() { PropertyNameCaseInsensitive = true };
+    private static readonly JsonSerializerOptions _opts = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString,
+    };
 
     public static IReadOnlyDictionary<long, SatcatRecord> Parse(string json)
     {

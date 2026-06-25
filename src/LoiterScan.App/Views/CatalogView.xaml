@@ -1,0 +1,39 @@
+<UserControl x:Class="LoiterScan.App.Views.CatalogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel Margin="16">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0 0 0 8">
+            <TextBlock Text="Catalog" FontSize="16" FontWeight="Bold"
+                       VerticalAlignment="Center" Margin="0 0 16 0"/>
+            <TextBlock Text="{Binding TotalCount, StringFormat='{}{0} objects'}"
+                       Foreground="#555" VerticalAlignment="Center" Margin="0 0 16 0"/>
+            <TextBox Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
+                     Width="220" Padding="4 2" VerticalContentAlignment="Center"/>
+            <Button Content="Clear" Command="{Binding ClearFilterCommand}"
+                    Margin="4 0 0 0" Padding="8 3"/>
+            <ProgressBar IsIndeterminate="True" Width="80" Height="6" Margin="16 0 0 0"
+                         VerticalAlignment="Center"
+                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        </StackPanel>
+
+        <DataGrid ItemsSource="{Binding Objects}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  IsReadOnly="True"
+                  VirtualizingStackPanel.IsVirtualizing="True"
+                  EnableRowVirtualization="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="NORAD ID"     Binding="{Binding NoradId}"                            Width="90"/>
+                <DataGridTextColumn Header="Name"         Binding="{Binding Name}"                               Width="200"/>
+                <DataGridTextColumn Header="Owner"        Binding="{Binding Owner}"                              Width="80"/>
+                <DataGridTextColumn Header="Type"         Binding="{Binding ObjectType}"                         Width="90"/>
+                <DataGridTextColumn Header="Regime"       Binding="{Binding Regime}"                             Width="90"/>
+                <DataGridTextColumn Header="Inc (°)"      Binding="{Binding InclinationDeg, StringFormat='F1'}"  Width="70"/>
+                <DataGridTextColumn Header="Perigee (km)" Binding="{Binding PerigeeKm,  StringFormat='F0'}"     Width="95"/>
+                <DataGridTextColumn Header="Apogee (km)"  Binding="{Binding ApogeeKm,   StringFormat='F0'}"     Width="95"/>
+                <DataGridTextColumn Header="Age (d)"      Binding="{Binding EpochAgeDays, StringFormat='F1'}"   Width="70"/>
+                <DataGridCheckBoxColumn Header="Debris"   Binding="{Binding IsDebris}"                          Width="60"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

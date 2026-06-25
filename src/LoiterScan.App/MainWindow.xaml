@@ -1,9 +1,27 @@
 <Window x:Class="LoiterScan.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Loiter scan" Height="600" Width="900">
+        Title="Loiter Scan" Height="720" Width="1100"
+        Background="#F0F4F8">
     <Grid>
-        <TextBlock Text="Loiter scan — see docs/loiter-detection-spec.md"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="160"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Nav rail -->
+        <StackPanel Grid.Column="0" Background="#0D1B2A">
+            <TextBlock Text="LOITERSCAN"
+                       Foreground="#5B8DB8" FontSize="11" FontWeight="Bold"
+                       Margin="16 20 16 24"/>
+            <Button Content="Dashboard"     Command="{Binding NavigateDashboardCommand}"  Style="{StaticResource NavButtonStyle}"/>
+            <Button Content="Results"       Command="{Binding NavigateResultsCommand}"    Style="{StaticResource NavButtonStyle}"/>
+            <Button Content="Catalog"       Command="{Binding NavigateCatalogCommand}"    Style="{StaticResource NavButtonStyle}"/>
+            <Button Content="Configuration" Command="{Binding NavigateConfigCommand}"     Style="{StaticResource NavButtonStyle}"/>
+            <Button Content="Analytics"     Command="{Binding NavigateAnalyticsCommand}"  Style="{StaticResource NavButtonStyle}"/>
+        </StackPanel>
+
+        <!-- Content area -->
+        <ContentControl Grid.Column="1" Content="{Binding ActiveViewModel}"/>
     </Grid>
 </Window>

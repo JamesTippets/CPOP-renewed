@@ -1,0 +1,103 @@
+<UserControl x:Class="LoiterScan.App.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:LoiterScan.App.ViewModels">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16" d:DataContext="{d:DesignInstance vm:DashboardViewModel}"
+                    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                    mc:Ignorable="d">
+
+            <!-- Catalog status cards -->
+            <TextBlock Text="Catalog Status" FontSize="16" FontWeight="Bold" Margin="0 0 0 8"/>
+            <UniformGrid Columns="4" Margin="0 0 0 16">
+                <Border Background="#1E3A5F" CornerRadius="6" Margin="4" Padding="12">
+                    <StackPanel>
+                        <TextBlock Text="Objects" Foreground="#9DB8D9" FontSize="11"/>
+                        <TextBlock Text="{Binding TotalObjects}" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#1E3A5F" CornerRadius="6" Margin="4" Padding="12">
+                    <StackPanel>
+                        <TextBlock Text="Stale (>3d)" Foreground="#9DB8D9" FontSize="11"/>
+                        <TextBlock Text="{Binding StaleObjects}" Foreground="#FFC107" FontSize="24" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#1E3A5F" CornerRadius="6" Margin="4" Padding="12">
+                    <StackPanel>
+                        <TextBlock Text="Decayed" Foreground="#9DB8D9" FontSize="11"/>
+                        <TextBlock Text="{Binding DecayedObjects}" Foreground="#F44336" FontSize="24" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#1E3A5F" CornerRadius="6" Margin="4" Padding="12">
+                    <StackPanel>
+                        <TextBlock Text="Last Refresh" Foreground="#9DB8D9" FontSize="11"/>
+                        <TextBlock Text="{Binding LastRefresh}" Foreground="White" FontSize="13" FontWeight="Bold" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Run controls -->
+            <TextBlock Text="Run Detection" FontSize="16" FontWeight="Bold" Margin="0 0 0 8"/>
+            <Border Background="#F5F5F5" CornerRadius="6" Padding="12" Margin="0 0 0 16">
+                <StackPanel>
+                    <CheckBox Content="Refresh catalog before run"
+                              IsChecked="{Binding RefreshBeforeRun}"
+                              IsEnabled="{Binding IsRunning, Converter={StaticResource InverseBoolConverter}}"
+                              Margin="0 0 0 8"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="▶  Start Run"
+                                Command="{Binding StartRunCommand}"
+                                Padding="16 6" Margin="0 0 8 0"
+                                Background="#1565C0" Foreground="White"
+                                BorderBrush="Transparent"/>
+                        <Button Content="✕  Cancel"
+                                Command="{Binding CancelRunCommand}"
+                                Padding="12 6"
+                                Background="#D32F2F" Foreground="White"
+                                BorderBrush="Transparent"
+                                IsEnabled="{Binding IsRunning}"/>
+                    </StackPanel>
+
+                    <!-- Progress -->
+                    <StackPanel Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibilityConverter}}"
+                                Margin="0 12 0 0">
+                        <ProgressBar IsIndeterminate="True" Height="6" Margin="0 0 0 4"/>
+                        <TextBlock>
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="Phase: {0}  |  Processed: {1}  |  Candidates: {2}">
+                                    <Binding Path="ProgressPhase"/>
+                                    <Binding Path="ProgressProcessed"/>
+                                    <Binding Path="ProgressCandidates"/>
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding StatusMessage}"
+                               Foreground="#2E7D32"
+                               Visibility="{Binding StatusMessage, Converter={StaticResource StringNotEmptyToVisibilityConverter}}"
+                               Margin="0 8 0 0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Recent runs -->
+            <TextBlock Text="Recent Runs" FontSize="16" FontWeight="Bold" Margin="0 0 0 8"/>
+            <DataGrid ItemsSource="{Binding RecentRuns}"
+                      SelectedItem="{Binding SelectedRun}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      VirtualizingStackPanel.IsVirtualizing="True"
+                      MaxHeight="300">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Run ID"    Binding="{Binding RunId}"    Width="70"/>
+                    <DataGridTextColumn Header="Started"   Binding="{Binding StartedAt, StringFormat='yyyy-MM-dd HH:mm'}" Width="140"/>
+                    <DataGridTextColumn Header="Status"    Binding="{Binding Status}"   Width="90"/>
+                    <DataGridTextColumn Header="Events"    Binding="{Binding EventsDetected}" Width="70"/>
+                    <DataGridTextColumn Header="Pairs Checked" Binding="{Binding TotalPairsChecked}" Width="100"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

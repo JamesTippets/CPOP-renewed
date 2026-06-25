@@ -1,3 +1,4 @@
+using LoiterScan.Acquisition.CelesTrak.Dto;
 using LoiterScan.Core.Abstractions;
 using LoiterScan.Core.Models;
 
@@ -11,26 +12,46 @@ namespace LoiterScan.Acquisition.CelesTrak;
 /// </summary>
 public sealed class CelesTrakCatalogSource(HttpClient http) : ICatalogSource
 {
-    // CelesTrak GP/OMM (full catalog, all objects including debris)
-    private const string GpUrl = "https://celestrak.org/GP/GP.php?CLASS=GP&FORMAT=JSON";
-    // CelesTrak SATCAT (all objects)
-    private const string SatcatUrl = "https://celestrak.org/pub/satcat.json";
+    // CelesTrak GP/OMM — active catalog in OMM JSON format
+    // (replaced the old /GP/GP.php?CLASS=GP path which was retired ~2023)
+    private const string GpUrl = "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=JSON";
+
+    // CelesTrak SATCAT — joins owner, object-type, and decay metadata
+    // Fetched opportunistically: if this endpoint is unavailable those fields are left null.
+    private const string SatcatUrl = "https://www.celestrak.org/pub/satcat.json";
 
     public async Task<IReadOnlyList<CatalogObject>> FetchCatalogAsync(CancellationToken ct = default)
     {
-        // Fetch in parallel to reduce wall time
+        // Start both requests concurrently; SATCAT failure is non-fatal
         var gpTask     = http.GetStringAsync(GpUrl, ct);
-        var satcatTask = http.GetStringAsync(SatcatUrl, ct);
-        await Task.WhenAll(gpTask, satcatTask);
+        var satcatTask = TryFetchSatcatAsync(ct);
 
-        return BuildCatalog(await gpTask, await satcatTask);
+        // Both tasks are already running; awaiting sequentially preserves parallelism
+        string  gpJson = await gpTask;
+        string? satcat = await satcatTask;
+        return BuildCatalog(gpJson, satcat);
+    }
+
+    private async Task<string?> TryFetchSatcatAsync(CancellationToken ct)
+    {
+        try
+        {
+            return await http.GetStringAsync(SatcatUrl, ct);
+        }
+        catch (HttpRequestException)
+        {
+            // SATCAT endpoint unavailable — proceed without owner/type metadata
+            return null;
+        }
     }
 
     /// <summary>Parsing and join step extracted for testability without HTTP.</summary>
-    internal static IReadOnlyList<CatalogObject> BuildCatalog(string gpJson, string satcatJson)
+    internal static IReadOnlyList<CatalogObject> BuildCatalog(string gpJson, string? satcatJson)
     {
         var gpRecords    = CelesTrakGpParser.Parse(gpJson);
-        var satcatById   = CelesTrakSatcatParser.Parse(satcatJson);
+        IReadOnlyDictionary<long, SatcatRecord> satcatById = satcatJson is not null
+            ? CelesTrakSatcatParser.Parse(satcatJson)
+            : new Dictionary<long, SatcatRecord>();
 
         // Deduplicate GP records to newest-per-object (newest = highest element set number)
         var newestByNorad = new Dictionary<long, (int ElementSetNo, int Index)>(gpRecords.Count);

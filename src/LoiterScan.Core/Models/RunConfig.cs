@@ -27,7 +27,11 @@ public sealed record PreFilterConfig(
     IReadOnlyList<long> ExcludedIds);
 
 /// <summary>Acquisition settings (spec §4).</summary>
-public sealed record AcquisitionConfig(string Source, bool RefreshBeforeRun);
+public sealed record AcquisitionConfig(
+    string Source,
+    bool RefreshBeforeRun,
+    string? Username = null,
+    string? Password = null);
 
 /// <summary>Complete application configuration snapshot — stored per run for auditability (spec §6).</summary>
 public sealed record RunConfig(

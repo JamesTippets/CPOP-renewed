@@ -61,8 +61,10 @@ public static class DbInitializer
             ExcludeDebris = preFilter.GetProperty("excludeDebris").GetBoolean(),
             RegimeScope   = preFilter.GetProperty("regimeScope").GetString() ?? "ALL",
 
-            AcquisitionSource = acq.GetProperty("source").GetString() ?? "celestrak",
-            RefreshBeforeRun  = acq.GetProperty("refreshBeforeRun").GetBoolean(),
+            AcquisitionSource   = acq.GetProperty("source").GetString() ?? "celestrak",
+            RefreshBeforeRun    = acq.GetProperty("refreshBeforeRun").GetBoolean(),
+            CredentialUsername  = acq.TryGetProperty("username", out var u) ? u.GetString() : null,
+            CredentialPassword  = acq.TryGetProperty("password", out var pw) ? pw.GetString() : null,
         });
 
         foreach (var country in preFilter.GetProperty("excludedCountries").EnumerateArray())

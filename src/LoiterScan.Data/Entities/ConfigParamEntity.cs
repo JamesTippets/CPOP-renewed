@@ -36,6 +36,8 @@ public sealed class ConfigParamEntity
     public string RegimeScope    { get; set; } = "ALL";
 
     // Acquisition
-    public string AcquisitionSource  { get; set; } = "celestrak";
-    public bool   RefreshBeforeRun   { get; set; }
+    public string  AcquisitionSource    { get; set; } = "celestrak";
+    public bool    RefreshBeforeRun     { get; set; }
+    public string? CredentialUsername   { get; set; }
+    public string? CredentialPassword   { get; set; }
 }
