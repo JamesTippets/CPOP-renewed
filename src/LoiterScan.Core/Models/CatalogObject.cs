@@ -15,4 +15,8 @@ public sealed record CatalogObject(
     double ApogeeKm,
     double PerigeeKm,
     OrbitRegime Regime,
-    double EpochAgeDays);
+    double EpochAgeDays)
+{
+    /// <summary>CelesTrak GROUP membership tags (e.g. "starlink"). Empty if not yet fetched.</summary>
+    public IReadOnlyList<string> Groups { get; init; } = [];
+}
