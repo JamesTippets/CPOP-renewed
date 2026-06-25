@@ -24,6 +24,20 @@ public sealed class Sgp4Propagator : IPropagator
             eci.Velocity.X, eci.Velocity.Y, eci.Velocity.Z);
     }
 
+    public bool TryPropagate(MeanElements elements, DateTime atUtc, out OrbitState state)
+    {
+        try
+        {
+            state = Propagate(elements, atUtc);
+            return true;
+        }
+        catch
+        {
+            state = default;
+            return false;
+        }
+    }
+
     // ── Synthetic TLE formatter ───────────────────────────────────────────────
     //
     // TLE line-1 column map (0-indexed, 69 chars total):

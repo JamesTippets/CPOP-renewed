@@ -16,6 +16,7 @@ public sealed class LoiterScanDbContext : DbContext
     public DbSet<ExclCountryEntity>    ExclCountries   { get; set; } = null!;
     public DbSet<ExclGroupEntity>      ExclGroups      { get; set; } = null!;
     public DbSet<ExclIdEntity>         ExclIds         { get; set; } = null!;
+    public DbSet<ExclPairEntity>       ExclPairs       { get; set; } = null!;
     public DbSet<RunEntity>            Runs            { get; set; } = null!;
     public DbSet<LoiteringEventEntity> LoiteringEvents { get; set; } = null!;
     public DbSet<CatalogObjectEntity>  CatalogObjects  { get; set; } = null!;
@@ -50,6 +51,13 @@ public sealed class LoiterScanDbContext : DbContext
             e.ToTable("excl_ids");
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.NoradId).IsUnique();
+        });
+
+        mb.Entity<ExclPairEntity>(e =>
+        {
+            e.ToTable("excl_pairs");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.PairKeyLow, x.PairKeyHigh }).IsUnique().HasDatabaseName("ix_excl_pairs_pair_key");
         });
 
         // ── Runs ──────────────────────────────────────────────────────────────

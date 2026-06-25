@@ -36,11 +36,13 @@ internal static class FineFilter
                 var t = window.Start;
                 while (t <= window.End)
                 {
-                    var sa = propagator.Propagate(candidate.A.Elements, t);
-                    var sb = propagator.Propagate(candidate.B.Elements, t);
-                    double dist = Distance(sa.X, sa.Y, sa.Z, sb.X, sb.Y, sb.Z);
-                    if (dist <= thresholdKm)
-                        flaggedTimes.Add(t);
+                    if (propagator.TryPropagate(candidate.A.Elements, t, out var sa) &&
+                        propagator.TryPropagate(candidate.B.Elements, t, out var sb))
+                    {
+                        double dist = Distance(sa.X, sa.Y, sa.Z, sb.X, sb.Y, sb.Z);
+                        if (dist <= thresholdKm)
+                            flaggedTimes.Add(t);
+                    }
                     t += step;
                 }
 

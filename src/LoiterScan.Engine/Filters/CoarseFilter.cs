@@ -40,21 +40,27 @@ internal static class CoarseFilter
             ct.ThrowIfCancellationRequested();
             var t = t0 + step * s;
 
-            // Propagate all objects at this step
+            // Propagate all objects at this step; skip objects whose elements are invalid
             for (int i = 0; i < objects.Count; i++)
             {
-                var state = propagator.Propagate(objects[i].Elements, t);
-                positions[i] = (state.X, state.Y, state.Z);
+                if (propagator.TryPropagate(objects[i].Elements, t, out var st))
+                    positions[i] = (st.X, st.Y, st.Z);
+                else
+                    positions[i] = (double.NaN, double.NaN, double.NaN);
             }
 
-            // Build spatial grid
+            // Build spatial grid — skip objects whose propagation failed
             grid.Clear();
             for (int i = 0; i < objects.Count; i++)
+            {
+                if (double.IsNaN(positions[i].X)) continue;
                 grid.Add(i, positions[i].X, positions[i].Y, positions[i].Z);
+            }
 
             // Find pairs within threshold
             for (int i = 0; i < objects.Count; i++)
             {
+                if (double.IsNaN(positions[i].X)) continue;
                 var (xi, yi, zi) = positions[i];
                 foreach (int j in grid.QueryNeighbours(xi, yi, zi, thresholdKm))
                 {

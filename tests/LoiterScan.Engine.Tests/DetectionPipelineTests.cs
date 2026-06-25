@@ -28,9 +28,11 @@ public class DetectionPipelineTests
         PreFilter: new PreFilterConfig(
             ExcludeDebris:     false,
             RegimeScope:       "ALL",
+            MaxEpochAgeDays:   9999,   // synthetic test epochs are fixed in the past
             ExcludedCountries: [],
             ExcludedGroups:    [],
-            ExcludedIds:       []),
+            ExcludedIds:       [],
+            ExcludedPairs:     []),
         Acquisition: new AcquisitionConfig("celestrak", false));
 
     // Synthetic CatalogObject — elements are dummies; the fake propagator ignores them
@@ -63,6 +65,12 @@ public class DetectionPipelineTests
                 return new OrbitState(at, x, y, z, 0, 0, 0);
             }
             return new OrbitState(at, 7000, 0, 0, 0, 0, 0);
+        }
+
+        public bool TryPropagate(MeanElements e, DateTime at, out OrbitState state)
+        {
+            state = Propagate(e, at);
+            return true;
         }
     }
 

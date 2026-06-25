@@ -42,27 +42,39 @@ public sealed class DetectionPipeline
 
         // ── 1. Pre-filter ────────────────────────────────────────────────────
         progress?.Report(new PipelineProgress("PreFilter", 0, catalog.Count));
-        var survivors = PreFilter.FilterObjects(catalog, preFilter);
-
-        // Apply apogee/perigee gating to reduce pair set before coarse.
-        // We build a pre-gated catalog: objects that could meet ANY other surviving object.
-        // (Gating is per-pair inside CoarseFilter; here we just pass filtered objects.)
+        var survivors = PreFilter.FilterObjects(catalog, preFilter, origin);
         progress?.Report(new PipelineProgress("PreFilter", survivors.Count, survivors.Count));
+
+        // ── 1b. Propagation pre-validation ───────────────────────────────────
+        // Try one propagation per survivor at the run epoch. Objects that throw
+        // (decayed, negative eccentricity from high BStar, degenerate elements)
+        // are silently discarded here — one exception per bad object instead of
+        // one per timestep across the entire cascade.
+        progress?.Report(new PipelineProgress("Validate", 0, survivors.Count));
+        var validated = new List<CatalogObject>(survivors.Count);
+        foreach (var obj in survivors)
+        {
+            if (_propagator.TryPropagate(obj.Elements, origin, out _))
+                validated.Add(obj);
+        }
+        progress?.Report(new PipelineProgress("Validate", validated.Count, validated.Count));
 
         // ── 2. Coarse filter (spatial index) ─────────────────────────────────
         var coarseCandidates = await Task.Run(() =>
             CoarseFilter.Run(
-                survivors, _propagator, origin,
+                validated, _propagator, origin,
                 cascade.HorizonDays,
                 cascade.Coarse.StepMinutes,
                 cascade.Coarse.ThresholdKm,
                 cascade.Buffers.CoarseToFineMinutes,
                 progress, ct), ct);
 
-        // Apply geometric gating to discard impossible pairs that the coarse filter
-        // raised (can happen when gating wasn't applied per-pair before propagation).
+        // Apply geometric gating, then drop any pair that is explicitly excluded
+        // (co-orbital / docked objects that would always trigger a false positive).
+        var excludedPairs = new HashSet<PairKey>(config.PreFilter.ExcludedPairs);
         var gated = coarseCandidates
             .Where(p => PreFilter.PairCouldMeet(p.A, p.B, cascade.Coarse.ThresholdKm))
+            .Where(p => !excludedPairs.Contains(new PairKey(p.A.NoradId, p.B.NoradId)))
             .ToList();
 
         progress?.Report(new PipelineProgress("Coarse", gated.Count, gated.Count));

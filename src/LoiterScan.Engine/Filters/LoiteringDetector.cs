@@ -60,8 +60,12 @@ internal static class LoiteringDetector
         var t = window.Start;
         while (t <= window.End)
         {
-            var sa = propagator.Propagate(pair.A.Elements, t);
-            var sb = propagator.Propagate(pair.B.Elements, t);
+            if (!propagator.TryPropagate(pair.A.Elements, t, out var sa) ||
+                !propagator.TryPropagate(pair.B.Elements, t, out var sb))
+            {
+                t += step;
+                continue;
+            }
             double dist = Math.Sqrt(
                 (sa.X - sb.X) * (sa.X - sb.X) +
                 (sa.Y - sb.Y) * (sa.Y - sb.Y) +

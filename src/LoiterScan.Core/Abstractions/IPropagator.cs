@@ -9,4 +9,10 @@ namespace LoiterScan.Core.Abstractions;
 public interface IPropagator
 {
     OrbitState Propagate(MeanElements elements, DateTime atUtc);
+
+    /// <summary>
+    /// Non-throwing variant. Returns false and sets <paramref name="state"/> to default
+    /// when elements are degenerate (decayed orbit, negative eccentricity, etc.).
+    /// </summary>
+    bool TryPropagate(MeanElements elements, DateTime atUtc, out OrbitState state);
 }

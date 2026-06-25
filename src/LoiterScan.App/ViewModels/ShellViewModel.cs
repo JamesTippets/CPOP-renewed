@@ -32,8 +32,9 @@ public sealed partial class ShellViewModel : ObservableObject
         Analytics     = sp.GetRequiredService<AnalyticsViewModel>();
 
         // Wire cross-VM navigation events
-        Dashboard.RunSelected   += OnRunSelected;
-        Results.EventSelected   += OnEventSelected;
+        Dashboard.RunSelected    += OnRunSelected;
+        Results.EventSelected    += OnEventSelected;
+        EventDetail.NavigateBack += OnEventDetailBack;
 
         // Start on Dashboard
         ActiveViewModel = Dashboard;
@@ -57,4 +58,6 @@ public sealed partial class ShellViewModel : ObservableObject
         ActiveViewModel = EventDetail;
         await EventDetail.LoadAsync(eventId);
     }
+
+    private void OnEventDetailBack() => ActiveViewModel = Results;
 }

@@ -10,6 +10,7 @@
   "preFilter": {
     "excludeDebris": false,
     "regimeScope": "ALL",
+    "maxEpochAgeDays": 3,
     "excludedCountries": [],
     "excludedGroups": ["starlink"],
     "excludedIds": []

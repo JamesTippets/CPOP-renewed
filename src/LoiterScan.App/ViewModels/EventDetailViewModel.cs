@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using LoiterScan.App.Services;
 using LoiterScan.Core.Abstractions;
 using LoiterScan.Core.Models;
@@ -40,6 +41,11 @@ public sealed partial class EventDetailViewModel : ObservableObject
 
     /// <summary>Raised after plot data is ready so the view can refresh its WpfPlot controls.</summary>
     public event EventHandler? PlotsReady;
+
+    /// <summary>Raised when the user clicks the back button; shell wires this to restore Results.</summary>
+    public event Action? NavigateBack;
+
+    [RelayCommand] private void GoBack() => NavigateBack?.Invoke();
 
     private MeanElements? _elemA;
     private MeanElements? _elemB;

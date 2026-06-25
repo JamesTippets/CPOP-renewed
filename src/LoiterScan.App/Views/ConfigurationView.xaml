@@ -86,9 +86,44 @@
                 <Border Background="#F5F5F5" CornerRadius="4" Padding="12" Margin="0 0 0 16">
                     <StackPanel>
                         <CheckBox Content="Exclude debris objects" IsChecked="{Binding ExcludeDebris}" Margin="0 0 0 8"/>
+                        <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
+                            <TextBlock Text="Regime scope:" VerticalAlignment="Center" Width="180"/>
+                            <Grid>
+                                <ToggleButton x:Name="RegimeDropdown"
+                                              Content="{Binding RegimeScopeDisplay}"
+                                              HorizontalContentAlignment="Left"
+                                              Width="130" Padding="6 4"/>
+                                <Popup PlacementTarget="{Binding ElementName=RegimeDropdown}"
+                                       Placement="Bottom"
+                                       Width="130"
+                                       IsOpen="{Binding IsChecked, ElementName=RegimeDropdown, Mode=TwoWay}"
+                                       StaysOpen="False">
+                                    <Border Background="White" BorderBrush="#BDBDBD"
+                                            BorderThickness="1" Padding="8 6">
+                                        <StackPanel>
+                                            <CheckBox Content="ALL"
+                                                      IsChecked="{Binding DataContext.RegimeAll, ElementName=RegimeDropdown}"
+                                                      Margin="0 3"/>
+                                            <CheckBox Content="LEO"
+                                                      IsChecked="{Binding DataContext.RegimeLeo, ElementName=RegimeDropdown}"
+                                                      Margin="0 3"/>
+                                            <CheckBox Content="MEO"
+                                                      IsChecked="{Binding DataContext.RegimeMeo, ElementName=RegimeDropdown}"
+                                                      Margin="0 3"/>
+                                            <CheckBox Content="HEO"
+                                                      IsChecked="{Binding DataContext.RegimeHeo, ElementName=RegimeDropdown}"
+                                                      Margin="0 3"/>
+                                            <CheckBox Content="GEO"
+                                                      IsChecked="{Binding DataContext.RegimeGeo, ElementName=RegimeDropdown}"
+                                                      Margin="0 3"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Regime scope:" VerticalAlignment="Center" Width="120"/>
-                            <TextBox Text="{Binding RegimeScope}" Width="120" Padding="4 2"/>
+                            <TextBlock Text="Max element age (days):" VerticalAlignment="Center" Width="180"/>
+                            <TextBox Text="{Binding MaxEpochAgeDays}" Width="80" Padding="4 2"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -141,6 +176,36 @@
                         <TextBox Text="{Binding ExcludedIdsText, UpdateSourceTrigger=PropertyChanged}"
                                  AcceptsReturn="True" Height="72" Padding="4"
                                  VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Excluded pairs (co-orbital / docked) -->
+                <TextBlock Text="Excluded Pairs" FontSize="14" FontWeight="Bold" Margin="0 0 0 8"/>
+                <Border Background="#F5F5F5" CornerRadius="4" Padding="12" Margin="0 0 0 16">
+                    <StackPanel>
+                        <TextBlock Foreground="#555" TextWrapping="Wrap" Margin="0 0 0 8"
+                                   Text="Co-orbital and docked pairs excluded from detection. Right-click any event in Results to add a pair."/>
+                        <DataGrid ItemsSource="{Binding ExcludedPairs}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  MaxHeight="200"
+                                  HeadersVisibility="Column">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="NORAD-A" Binding="{Binding PairKeyLow}"  Width="90"/>
+                                <DataGridTextColumn Header="NORAD-B" Binding="{Binding PairKeyHigh}" Width="90"/>
+                                <DataGridTemplateColumn Header="" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Remove" Padding="8 2" HorizontalAlignment="Left"
+                                                    Command="{Binding DataContext.RemovePairCommand,
+                                                              RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </StackPanel>
                 </Border>
             </StackPanel>

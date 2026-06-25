@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LoiterScan.App.Services;
@@ -28,9 +29,89 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     [ObservableProperty] private int    _loiterMinDuration;
     [ObservableProperty] private int    _loiterExcursion;
 
-    // ── Pre-filter ────────────────────────────────────────────────────────────
-    [ObservableProperty] private bool   _excludeDebris;
-    [ObservableProperty] private string _regimeScope = "ALL";
+    // ── Pre-filter: regime multi-select ───────────────────────────────────────
+    [ObservableProperty] private bool _regimeAll = true;
+    [ObservableProperty] private bool _regimeLeo;
+    [ObservableProperty] private bool _regimeMeo;
+    [ObservableProperty] private bool _regimeHeo;
+    [ObservableProperty] private bool _regimeGeo;
+
+    // Prevents re-entrance when updating several flags at once (e.g. ALL clears others).
+    private bool _updatingRegime;
+
+    // When ALL is toggled on, clear all specific regimes.
+    partial void OnRegimeAllChanged(bool value)
+    {
+        if (!value || _updatingRegime) return;
+        _updatingRegime = true;
+        try { RegimeLeo = RegimeMeo = RegimeHeo = RegimeGeo = false; }
+        finally { _updatingRegime = false; }
+        OnPropertyChanged(nameof(RegimeScopeDisplay));
+    }
+
+    // When any specific regime is toggled on, deselect ALL.
+    partial void OnRegimeLeoChanged(bool value) { if (!_updatingRegime && value) ClearAll(); OnPropertyChanged(nameof(RegimeScopeDisplay)); }
+    partial void OnRegimeMeoChanged(bool value) { if (!_updatingRegime && value) ClearAll(); OnPropertyChanged(nameof(RegimeScopeDisplay)); }
+    partial void OnRegimeHeoChanged(bool value) { if (!_updatingRegime && value) ClearAll(); OnPropertyChanged(nameof(RegimeScopeDisplay)); }
+    partial void OnRegimeGeoChanged(bool value) { if (!_updatingRegime && value) ClearAll(); OnPropertyChanged(nameof(RegimeScopeDisplay)); }
+
+    private void ClearAll()
+    {
+        if (!RegimeAll) return;
+        _updatingRegime = true;
+        try { RegimeAll = false; }
+        finally { _updatingRegime = false; }
+        OnPropertyChanged(nameof(RegimeScopeDisplay));
+    }
+
+    /// <summary>Summary label shown on the dropdown toggle button.</summary>
+    public string RegimeScopeDisplay
+    {
+        get
+        {
+            if (RegimeAll) return "ALL";
+            var parts = new List<string>(4);
+            if (RegimeLeo) parts.Add("LEO");
+            if (RegimeMeo) parts.Add("MEO");
+            if (RegimeHeo) parts.Add("HEO");
+            if (RegimeGeo) parts.Add("GEO");
+            return parts.Count == 0 ? "(none)" : string.Join(", ", parts);
+        }
+    }
+
+    private string ComputeRegimeScopeString()
+    {
+        if (RegimeAll) return "ALL";
+        var parts = new List<string>(4);
+        if (RegimeLeo) parts.Add("LEO");
+        if (RegimeMeo) parts.Add("MEO");
+        if (RegimeHeo) parts.Add("HEO");
+        if (RegimeGeo) parts.Add("GEO");
+        return parts.Count == 0 ? "ALL" : string.Join(",", parts);
+    }
+
+    private void SetRegimeScopeFromString(string value)
+    {
+        var scopes = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                          .Select(s => s.ToUpperInvariant())
+                          .ToHashSet();
+        bool all = scopes.Contains("ALL") || scopes.Count == 0;
+        _updatingRegime = true;
+        try
+        {
+            RegimeAll = all;
+            RegimeLeo = !all && scopes.Contains("LEO");
+            RegimeMeo = !all && scopes.Contains("MEO");
+            RegimeHeo = !all && scopes.Contains("HEO");
+            RegimeGeo = !all && scopes.Contains("GEO");
+        }
+        finally { _updatingRegime = false; }
+        OnPropertyChanged(nameof(RegimeScopeDisplay));
+    }
+
+    // ── Pre-filter: other ─────────────────────────────────────────────────────
+    [ObservableProperty] private bool _excludeDebris;
+    [ObservableProperty] private int  _maxEpochAgeDays = 3;
 
     // ── Acquisition ───────────────────────────────────────────────────────────
     [ObservableProperty] private string _acquisitionSource = "CelesTrak";
@@ -62,6 +143,9 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     [ObservableProperty] private string _excludedGroupsText    = string.Empty;
     [ObservableProperty] private string _excludedIdsText       = string.Empty;
 
+    // ── Excluded pairs (co-orbital / docked — managed independently of Save) ──
+    public ObservableCollection<ExclPairEntity> ExcludedPairs { get; } = [];
+
     // ── Status ────────────────────────────────────────────────────────────────
     [ObservableProperty] private string _validationError = string.Empty;
     [ObservableProperty] private string _saveStatus      = string.Empty;
@@ -86,8 +170,9 @@ public sealed partial class ConfigurationViewModel : ObservableObject
         LoiterMinDuration  = entity.LoiterMinDurationMinutes;
         LoiterExcursion    = entity.LoiterExcursionAllowanceMinutes;
 
-        ExcludeDebris = entity.ExcludeDebris;
-        RegimeScope   = entity.RegimeScope;
+        ExcludeDebris   = entity.ExcludeDebris;
+        SetRegimeScopeFromString(entity.RegimeScope);
+        MaxEpochAgeDays = entity.MaxEpochAgeDays;
 
         // Map stored lower-case source id to display name
         AcquisitionSource = entity.AcquisitionSource.Equals("space-track", StringComparison.OrdinalIgnoreCase)
@@ -101,6 +186,10 @@ public sealed partial class ConfigurationViewModel : ObservableObject
         ExcludedCountriesText = string.Join("\n", countries);
         ExcludedGroupsText    = string.Join("\n", groups);
         ExcludedIdsText       = string.Join("\n", ids.Select(i => i.ToString()));
+
+        var pairs = await _configSvc.GetExclPairsAsync();
+        ExcludedPairs.Clear();
+        foreach (var p in pairs) ExcludedPairs.Add(p);
 
         ValidationError = string.Empty;
         SaveStatus      = string.Empty;
@@ -127,7 +216,8 @@ public sealed partial class ConfigurationViewModel : ObservableObject
             LoiterMinDurationMinutes        = LoiterMinDuration,
             LoiterExcursionAllowanceMinutes = LoiterExcursion,
             ExcludeDebris      = ExcludeDebris,
-            RegimeScope        = RegimeScope,
+            RegimeScope        = ComputeRegimeScopeString(),
+            MaxEpochAgeDays    = MaxEpochAgeDays,
             AcquisitionSource  = AcquisitionSource.Equals("Space-Track", StringComparison.OrdinalIgnoreCase)
                                      ? "space-track" : "celestrak",
             RefreshBeforeRun   = RefreshBeforeRun,
@@ -150,6 +240,13 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     }
 
     [RelayCommand] private async Task ReloadAsync() => await LoadAsync();
+
+    [RelayCommand]
+    private async Task RemovePairAsync(ExclPairEntity pair)
+    {
+        await _configSvc.RemoveExclPairAsync(pair.Id);
+        ExcludedPairs.Remove(pair);
+    }
 
     private bool Validate()
     {

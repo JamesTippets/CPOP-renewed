@@ -10,7 +10,7 @@ internal static class PreFilter
 {
     /// <summary>Returns objects that survive all per-object exclusion rules.</summary>
     public static IReadOnlyList<CatalogObject> FilterObjects(
-        IReadOnlyList<CatalogObject> catalog, PreFilterConfig cfg)
+        IReadOnlyList<CatalogObject> catalog, PreFilterConfig cfg, DateTime asOf)
     {
         var excludedIds       = new HashSet<long>(cfg.ExcludedIds);
         var excludedCountries = new HashSet<string>(cfg.ExcludedCountries, StringComparer.OrdinalIgnoreCase);
@@ -19,11 +19,19 @@ internal static class PreFilter
         var result = new List<CatalogObject>(catalog.Count);
         foreach (var obj in catalog)
         {
-            if (cfg.ExcludeDebris && obj.IsDebris)                                          continue;
-            if (excludedIds.Contains(obj.NoradId))                                           continue;
-            if (obj.Owner    != null && excludedCountries.Contains(obj.Owner))               continue;
-            if (obj.Groups.Any(g => excludedGroups.Contains(g)))                             continue;
-            if (!MatchesRegime(obj.Regime, cfg.RegimeScope))                                 continue;
+            // Decayed objects have no orbit to propagate.
+            if (obj.DecayDate.HasValue && obj.DecayDate.Value < asOf)            continue;
+
+            // Elements too stale to produce reliable propagation — SGP4 drag integration
+            // accumulates unbounded error over long intervals, producing negative eccentricity.
+            double epochAgeDays = (asOf - obj.Elements.EpochUtc).TotalDays;
+            if (epochAgeDays > cfg.MaxEpochAgeDays)                              continue;
+
+            if (cfg.ExcludeDebris && obj.IsDebris)                               continue;
+            if (excludedIds.Contains(obj.NoradId))                               continue;
+            if (obj.Owner != null && excludedCountries.Contains(obj.Owner))      continue;
+            if (obj.Groups.Any(g => excludedGroups.Contains(g)))                 continue;
+            if (!MatchesRegime(obj.Regime, cfg.RegimeScope))                     continue;
             result.Add(obj);
         }
         return result;
@@ -37,13 +45,24 @@ internal static class PreFilter
         a.PerigeeKm <= b.ApogeeKm + thresholdKm &&
         b.PerigeeKm <= a.ApogeeKm + thresholdKm;
 
-    private static bool MatchesRegime(OrbitRegime regime, string scope) =>
-        scope.ToUpperInvariant() switch
+    private static bool MatchesRegime(OrbitRegime regime, string scope)
+    {
+        // scope may be "ALL", a single value ("LEO"), or comma-separated ("LEO,MEO")
+        var upper = scope.ToUpperInvariant();
+        if (upper == "ALL" || string.IsNullOrWhiteSpace(upper)) return true;
+
+        foreach (var part in upper.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            "LEO" => regime == OrbitRegime.Leo,
-            "MEO" => regime == OrbitRegime.Meo,
-            "GEO" => regime == OrbitRegime.Geo,
-            "HEO" => regime == OrbitRegime.Heo,
-            _     => true  // "ALL" or unrecognised
-        };
+            bool match = part switch
+            {
+                "LEO" => regime == OrbitRegime.Leo,
+                "MEO" => regime == OrbitRegime.Meo,
+                "GEO" => regime == OrbitRegime.Geo,
+                "HEO" => regime == OrbitRegime.Heo,
+                _     => false,
+            };
+            if (match) return true;
+        }
+        return false;
+    }
 }

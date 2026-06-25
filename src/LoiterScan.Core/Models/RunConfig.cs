@@ -22,9 +22,11 @@ public sealed record CascadeConfig(
 public sealed record PreFilterConfig(
     bool ExcludeDebris,
     string RegimeScope,
+    int MaxEpochAgeDays,
     IReadOnlyList<string> ExcludedCountries,
     IReadOnlyList<string> ExcludedGroups,
-    IReadOnlyList<long> ExcludedIds);
+    IReadOnlyList<long> ExcludedIds,
+    IReadOnlyList<PairKey> ExcludedPairs);
 
 /// <summary>Acquisition settings (spec §4).</summary>
 public sealed record AcquisitionConfig(

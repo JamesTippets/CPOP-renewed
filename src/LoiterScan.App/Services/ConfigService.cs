@@ -18,6 +18,7 @@ public sealed class ConfigService(IDbContextFactory<LoiterScanDbContext> factory
         var countries = await db.ExclCountries.Select(x => x.Country).ToListAsync();
         var groups    = await db.ExclGroups.Select(x => x.GroupName).ToListAsync();
         var ids       = await db.ExclIds.Select(x => x.NoradId).ToListAsync();
+        var pairs     = await db.ExclPairs.Select(x => new PairKey(x.PairKeyLow, x.PairKeyHigh)).ToListAsync();
 
         return new RunConfig(
             Cascade: new CascadeConfig(
@@ -30,9 +31,11 @@ public sealed class ConfigService(IDbContextFactory<LoiterScanDbContext> factory
             PreFilter: new PreFilterConfig(
                 ExcludeDebris:    p.ExcludeDebris,
                 RegimeScope:      p.RegimeScope,
+                MaxEpochAgeDays:  p.MaxEpochAgeDays,
                 ExcludedCountries: countries,
                 ExcludedGroups:    groups,
-                ExcludedIds:       ids),
+                ExcludedIds:       ids,
+                ExcludedPairs:     pairs),
             Acquisition: new AcquisitionConfig(p.AcquisitionSource, p.RefreshBeforeRun, p.CredentialUsername, p.CredentialPassword));
     }
 
@@ -74,5 +77,26 @@ public sealed class ConfigService(IDbContextFactory<LoiterScanDbContext> factory
         foreach (var i in ids)       db.ExclIds.Add(new ExclIdEntity { NoradId = i });
 
         await db.SaveChangesAsync();
+    }
+
+    public async Task<List<ExclPairEntity>> GetExclPairsAsync()
+    {
+        await using var db = factory.CreateDbContext();
+        return await db.ExclPairs.OrderBy(x => x.PairKeyLow).ThenBy(x => x.PairKeyHigh).ToListAsync();
+    }
+
+    public async Task AddExclPairAsync(long low, long high)
+    {
+        await using var db = factory.CreateDbContext();
+        if (await db.ExclPairs.AnyAsync(x => x.PairKeyLow == low && x.PairKeyHigh == high))
+            return;
+        db.ExclPairs.Add(new ExclPairEntity { PairKeyLow = low, PairKeyHigh = high });
+        await db.SaveChangesAsync();
+    }
+
+    public async Task RemoveExclPairAsync(int id)
+    {
+        await using var db = factory.CreateDbContext();
+        await db.ExclPairs.Where(x => x.Id == id).ExecuteDeleteAsync();
     }
 }

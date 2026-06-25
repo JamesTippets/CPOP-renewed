@@ -5,6 +5,14 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="16">
 
+            <!-- Back navigation -->
+            <Button Content="&#x2190; Back to Results"
+                    Command="{Binding GoBackCommand}"
+                    HorizontalAlignment="Left"
+                    Padding="8 4" Margin="0 0 0 12"
+                    Background="Transparent" BorderBrush="#BDBDBD"
+                    Cursor="Hand"/>
+
             <!-- Header -->
             <TextBlock Text="Event Detail" FontSize="16" FontWeight="Bold" Margin="0 0 0 12"/>
 

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using LoiterScan.App.Services;
 using LoiterScan.Data.Entities;
 
@@ -10,7 +11,8 @@ namespace LoiterScan.App.ViewModels;
 /// </summary>
 public sealed partial class ResultsViewModel : ObservableObject
 {
-    private readonly RunService _runSvc;
+    private readonly RunService    _runSvc;
+    private readonly ConfigService _configSvc;
 
     [ObservableProperty] private string _runLabel = "No run selected";
     [ObservableProperty] private int    _eventCount;
@@ -19,21 +21,24 @@ public sealed partial class ResultsViewModel : ObservableObject
 
     [ObservableProperty] private LoiteringEventEntity? _selectedEvent;
 
-    partial void OnSelectedEventChanged(LoiteringEventEntity? value)
-    {
-        if (value is not null)
-            EventSelected?.Invoke(value.Id);
-    }
+    partial void OnSelectedEventChanged(LoiteringEventEntity? value) { }
 
-    /// <summary>Raised when the user selects an event; carries the event Id to navigate to EventDetail.</summary>
+    /// <summary>Raised when the user explicitly left-clicks an event row to navigate to EventDetail.</summary>
     public event Action<long>? EventSelected;
 
-    public ResultsViewModel(RunService runSvc) => _runSvc = runSvc;
-
-    public async Task LoadAsync()
+    public void NavigateToSelected()
     {
-        // No-op if no run is pinned; caller typically follows up with LoadForRunAsync.
+        if (SelectedEvent is not null)
+            EventSelected?.Invoke(SelectedEvent.Id);
     }
+
+    public ResultsViewModel(RunService runSvc, ConfigService configSvc)
+    {
+        _runSvc    = runSvc;
+        _configSvc = configSvc;
+    }
+
+    public async Task LoadAsync() { }
 
     public async Task LoadForRunAsync(long runId)
     {
@@ -46,5 +51,29 @@ public sealed partial class ResultsViewModel : ObservableObject
         Events.Clear();
         foreach (var e in evs) Events.Add(e);
         EventCount = evs.Count;
+    }
+
+    /// <summary>
+    /// Excludes the pair in the given event from all future runs and removes matching
+    /// events from the current results list immediately.
+    /// </summary>
+    [RelayCommand]
+    private async Task ExcludePairAsync(LoiteringEventEntity? ev)
+    {
+        if (ev is null) return;
+
+        long lo = Math.Min(ev.NoradIdA, ev.NoradIdB);
+        long hi = Math.Max(ev.NoradIdA, ev.NoradIdB);
+        await _configSvc.AddExclPairAsync(lo, hi);
+
+        // Remove every event in the current view that belongs to this pair
+        var toRemove = Events
+            .Where(e => Math.Min(e.NoradIdA, e.NoradIdB) == lo &&
+                        Math.Max(e.NoradIdA, e.NoradIdB) == hi)
+            .ToList();
+        foreach (var e in toRemove)
+            Events.Remove(e);
+
+        EventCount = Events.Count;
     }
 }

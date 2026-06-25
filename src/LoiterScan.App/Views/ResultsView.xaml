@@ -8,13 +8,25 @@
                        Foreground="#555" Margin="0 2 0 0"/>
         </StackPanel>
 
-        <DataGrid ItemsSource="{Binding Events}"
+        <DataGrid x:Name="ResultsGrid"
+                  ItemsSource="{Binding Events}"
                   SelectedItem="{Binding SelectedEvent}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   IsReadOnly="True"
                   VirtualizingStackPanel.IsVirtualizing="True"
-                  EnableRowVirtualization="True">
+                  EnableRowVirtualization="True"
+                  MouseLeftButtonUp="ResultsGrid_MouseLeftButtonUp"
+                  PreviewMouseRightButtonDown="ResultsGrid_PreviewMouseRightButtonDown">
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Exclude pair from future runs"
+                              Command="{Binding PlacementTarget.DataContext.ExcludePairCommand,
+                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                              CommandParameter="{Binding PlacementTarget.SelectedItem,
+                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Pair Key"         Binding="{Binding PairKeyLow, StringFormat='{}{0}'}" Width="90"/>
                 <DataGridTextColumn Header="NORAD-A"          Binding="{Binding NoradIdA}"   Width="80"/>
