@@ -13,4 +13,9 @@
     <ProjectReference Include="../../src/LoiterScan.Acquisition/LoiterScan.Acquisition.csproj" />
     <ProjectReference Include="../../src/LoiterScan.Core/LoiterScan.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="Fixtures\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
