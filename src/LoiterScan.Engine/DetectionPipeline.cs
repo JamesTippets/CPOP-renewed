@@ -4,8 +4,18 @@ using LoiterScan.Engine.Filters;
 
 namespace LoiterScan.Engine;
 
-/// <summary>Per-phase progress for the UI (Phase, items processed, candidates surviving).</summary>
-public sealed record PipelineProgress(string Phase, int Processed, int Candidates);
+/// <summary>Per-phase progress for the UI.</summary>
+/// <param name="Phase">Short phase name ("PreFilter", "Coarse", "Fine", "Detection", …).</param>
+/// <param name="Processed">Items/steps completed so far in this phase.</param>
+/// <param name="Total">Total items/steps in this phase (0 = unknown → indeterminate).</param>
+/// <param name="Candidates">Objects or pairs that have survived to this point.</param>
+/// <param name="Message">Human-readable status line for the UI.</param>
+public sealed record PipelineProgress(
+    string Phase,
+    int    Processed,
+    int    Total,
+    int    Candidates,
+    string Message = "");
 
 /// <summary>
 /// Orchestrates the four-tier cascade: pre-filter → coarse (15 min / 50 km) →
@@ -37,27 +47,36 @@ public sealed class DetectionPipeline
         var preFilter = config.PreFilter;
 
         // ── 0. Fetch catalog ─────────────────────────────────────────────────
-        progress?.Report(new PipelineProgress("Fetch", 0, 0));
+        progress?.Report(new PipelineProgress("Fetch", 0, 0, 0, "Fetching catalog…"));
         var catalog = await _catalog.FetchCatalogAsync(ct);
+        progress?.Report(new PipelineProgress("Fetch", 1, 1, catalog.Count,
+            $"Fetched {catalog.Count:N0} objects"));
 
         // ── 1. Pre-filter ────────────────────────────────────────────────────
-        progress?.Report(new PipelineProgress("PreFilter", 0, catalog.Count));
+        progress?.Report(new PipelineProgress("PreFilter", 0, catalog.Count, 0,
+            $"Pre-filter: 0 / {catalog.Count:N0} objects…"));
         var survivors = PreFilter.FilterObjects(catalog, preFilter, origin);
-        progress?.Report(new PipelineProgress("PreFilter", survivors.Count, survivors.Count));
+        progress?.Report(new PipelineProgress("PreFilter", catalog.Count, catalog.Count, survivors.Count,
+            $"Pre-filter complete: {survivors.Count:N0} / {catalog.Count:N0} objects survive"));
 
         // ── 1b. Propagation pre-validation ───────────────────────────────────
-        // Try one propagation per survivor at the run epoch. Objects that throw
-        // (decayed, negative eccentricity from high BStar, degenerate elements)
-        // are silently discarded here — one exception per bad object instead of
-        // one per timestep across the entire cascade.
-        progress?.Report(new PipelineProgress("Validate", 0, survivors.Count));
+        // Try one propagation per survivor at the run epoch. Objects that fail
+        // (decayed, negative eccentricity, degenerate elements) are silently
+        // discarded — one check here avoids repeated failures every timestep.
+        progress?.Report(new PipelineProgress("Validate", 0, survivors.Count, 0,
+            $"Validating: 0 / {survivors.Count:N0} objects…"));
         var validated = new List<CatalogObject>(survivors.Count);
-        foreach (var obj in survivors)
+        for (int i = 0; i < survivors.Count; i++)
         {
-            if (_propagator.TryPropagate(obj.Elements, origin, out _))
-                validated.Add(obj);
+            ct.ThrowIfCancellationRequested();
+            if (_propagator.TryPropagate(survivors[i].Elements, origin, out _))
+                validated.Add(survivors[i]);
+            if (i % 250 == 0 || i == survivors.Count - 1)
+                progress?.Report(new PipelineProgress("Validate", i + 1, survivors.Count, validated.Count,
+                    $"Validating: {i + 1:N0} / {survivors.Count:N0}  ({validated.Count:N0} valid)"));
         }
-        progress?.Report(new PipelineProgress("Validate", validated.Count, validated.Count));
+        progress?.Report(new PipelineProgress("Validate", validated.Count, validated.Count, validated.Count,
+            $"Validation complete: {validated.Count:N0} of {survivors.Count:N0} objects propagable"));
 
         // ── 2. Coarse filter (spatial index) ─────────────────────────────────
         var coarseCandidates = await Task.Run(() =>
@@ -69,15 +88,22 @@ public sealed class DetectionPipeline
                 cascade.Buffers.CoarseToFineMinutes,
                 progress, ct), ct);
 
-        // Apply geometric gating, then drop any pair that is explicitly excluded
-        // (co-orbital / docked objects that would always trigger a false positive).
+        // Throw on the continuation thread so the debugger sees the catch block.
+        // (The filters exit their loops via IsCancellationRequested rather than throwing,
+        //  which avoids first-chance breaks on the thread-pool thread.)
+        ct.ThrowIfCancellationRequested();
+
+        // Apply geometric gating, then drop explicitly excluded pairs
+        // (co-orbital / docked objects that always trigger false positives).
         var excludedPairs = new HashSet<PairKey>(config.PreFilter.ExcludedPairs);
         var gated = coarseCandidates
             .Where(p => PreFilter.PairCouldMeet(p.A, p.B, cascade.Coarse.ThresholdKm))
             .Where(p => !excludedPairs.Contains(new PairKey(p.A.NoradId, p.B.NoradId)))
+            .Where(p => !PreFilter.PairSharesExcludedGroup(p.A, p.B, preFilter))
             .ToList();
 
-        progress?.Report(new PipelineProgress("Coarse", gated.Count, gated.Count));
+        progress?.Report(new PipelineProgress("Coarse", gated.Count, gated.Count, gated.Count,
+            $"Coarse complete: {gated.Count:N0} candidate pairs after gating"));
 
         // ── 3. Fine filter ───────────────────────────────────────────────────
         var fineCandidates = await Task.Run(() =>
@@ -86,9 +112,12 @@ public sealed class DetectionPipeline
                 cascade.Fine.StepMinutes,
                 cascade.Fine.ThresholdKm,
                 cascade.Buffers.FineToDetectionMinutes,
-                ct), ct);
+                progress, ct), ct);
 
-        progress?.Report(new PipelineProgress("Fine", fineCandidates.Count, fineCandidates.Count));
+        ct.ThrowIfCancellationRequested();
+
+        progress?.Report(new PipelineProgress("Fine", fineCandidates.Count, fineCandidates.Count, fineCandidates.Count,
+            $"Fine filter complete: {fineCandidates.Count:N0} pairs remain"));
 
         // ── 4. Loitering detection ───────────────────────────────────────────
         var events = await Task.Run(() =>
@@ -98,9 +127,12 @@ public sealed class DetectionPipeline
                 cascade.Detection.ThresholdKm,
                 cascade.Loiter.MinDurationMinutes,
                 cascade.Loiter.ExcursionAllowanceMinutes,
-                ct), ct);
+                progress, ct), ct);
 
-        progress?.Report(new PipelineProgress("Detection", events.Count, events.Count));
+        ct.ThrowIfCancellationRequested();
+
+        progress?.Report(new PipelineProgress("Detection", events.Count, events.Count, events.Count,
+            $"Detection complete: {events.Count:N0} loitering event(s)"));
         return events;
     }
 }

@@ -30,7 +30,10 @@ internal static class PreFilter
             if (cfg.ExcludeDebris && obj.IsDebris)                               continue;
             if (excludedIds.Contains(obj.NoradId))                               continue;
             if (obj.Owner != null && excludedCountries.Contains(obj.Owner))      continue;
-            if (obj.Groups.Any(g => excludedGroups.Contains(g)))                 continue;
+            if (!cfg.ExcludeGroupPairsOnly &&
+                (obj.Groups.Any(g => excludedGroups.Contains(g)) ||
+                 (obj.Name != null && excludedGroups.Any(g => obj.Name.Contains(g, StringComparison.OrdinalIgnoreCase)))))
+                continue;
             if (!MatchesRegime(obj.Regime, cfg.RegimeScope))                     continue;
             result.Add(obj);
         }
@@ -44,6 +47,25 @@ internal static class PreFilter
     public static bool PairCouldMeet(CatalogObject a, CatalogObject b, double thresholdKm) =>
         a.PerigeeKm <= b.ApogeeKm + thresholdKm &&
         b.PerigeeKm <= a.ApogeeKm + thresholdKm;
+
+    /// <summary>
+    /// Returns true when both objects belong to the same excluded group (by group tag or name
+    /// substring). Only relevant when <see cref="PreFilterConfig.ExcludeGroupPairsOnly"/> is true.
+    /// </summary>
+    public static bool PairSharesExcludedGroup(CatalogObject a, CatalogObject b, PreFilterConfig cfg)
+    {
+        if (!cfg.ExcludeGroupPairsOnly || cfg.ExcludedGroups.Count == 0) return false;
+        foreach (var group in cfg.ExcludedGroups)
+        {
+            if (ObjectMatchesGroup(a, group) && ObjectMatchesGroup(b, group))
+                return true;
+        }
+        return false;
+    }
+
+    private static bool ObjectMatchesGroup(CatalogObject obj, string group) =>
+        obj.Groups.Any(g => string.Equals(g, group, StringComparison.OrdinalIgnoreCase)) ||
+        (obj.Name?.Contains(group, StringComparison.OrdinalIgnoreCase) == true);
 
     private static bool MatchesRegime(OrbitRegime regime, string scope)
     {

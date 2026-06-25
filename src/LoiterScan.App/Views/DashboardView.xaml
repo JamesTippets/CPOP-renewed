@@ -62,16 +62,19 @@
                     <!-- Progress -->
                     <StackPanel Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibilityConverter}}"
                                 Margin="0 12 0 0">
-                        <ProgressBar IsIndeterminate="True" Height="6" Margin="0 0 0 4"/>
-                        <TextBlock>
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="Phase: {0}  |  Processed: {1}  |  Candidates: {2}">
-                                    <Binding Path="ProgressPhase"/>
-                                    <Binding Path="ProgressProcessed"/>
-                                    <Binding Path="ProgressCandidates"/>
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
+                        <Grid Margin="0 0 0 4">
+                            <ProgressBar Height="18"
+                                         IsIndeterminate="{Binding IsProgressIndeterminate}"
+                                         Value="{Binding ProgressPercentage}"
+                                         Maximum="100"/>
+                            <TextBlock Text="{Binding ProgressPercentage, StringFormat='{}{0:F0}%'}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontSize="10" FontWeight="SemiBold"
+                                       Visibility="{Binding IsProgressIndeterminate,
+                                                    Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                        </Grid>
+                        <TextBlock Text="{Binding ProgressMessage}"
+                                   FontSize="11" Foreground="#444" TextWrapping="Wrap"/>
                     </StackPanel>
 
                     <TextBlock Text="{Binding StatusMessage}"

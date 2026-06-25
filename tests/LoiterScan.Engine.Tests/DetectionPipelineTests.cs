@@ -26,8 +26,9 @@ public class DetectionPipelineTests
             Buffers:       new BufferConfig(30, 10),
             Loiter:        new LoiterConfig(60, 5)),
         PreFilter: new PreFilterConfig(
-            ExcludeDebris:     false,
-            RegimeScope:       "ALL",
+            ExcludeDebris:        false,
+            ExcludeGroupPairsOnly: false,
+            RegimeScope:          "ALL",
             MaxEpochAgeDays:   9999,   // synthetic test epochs are fixed in the past
             ExcludedCountries: [],
             ExcludedGroups:    [],

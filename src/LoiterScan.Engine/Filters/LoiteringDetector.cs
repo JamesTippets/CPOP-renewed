@@ -23,14 +23,19 @@ internal static class LoiteringDetector
         double thresholdKm,
         int minDurationMinutes,
         int maxExcursionMinutes,
+        IProgress<PipelineProgress>? progress,
         CancellationToken ct)
     {
         var step   = TimeSpan.FromMinutes(stepMinutes);
         var events = new List<LoiteringEvent>();
 
-        foreach (var candidate in candidates)
+        for (int ci = 0; ci < candidates.Count; ci++)
         {
-            ct.ThrowIfCancellationRequested();
+            if (ct.IsCancellationRequested) break;
+            var candidate = candidates[ci];
+
+            progress?.Report(new PipelineProgress("Detection", ci + 1, candidates.Count, events.Count,
+                $"Detection: pair {ci + 1:N0} / {candidates.Count:N0}  ({events.Count:N0} events)"));
 
             foreach (var window in candidate.Windows)
                 events.AddRange(

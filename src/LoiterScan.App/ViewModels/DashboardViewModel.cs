@@ -28,12 +28,17 @@ public sealed partial class DashboardViewModel : ObservableObject
     [ObservableProperty] private string   _catalogSource2 = "—";
 
     // ── Run controls ──────────────────────────────────────────────────────────
-    [ObservableProperty] private bool   _refreshBeforeRun;
-    [ObservableProperty] private bool   _isRunning;
-    [ObservableProperty] private string _progressPhase = string.Empty;
-    [ObservableProperty] private int    _progressProcessed;
-    [ObservableProperty] private int    _progressCandidates;
-    [ObservableProperty] private string _statusMessage = string.Empty;
+    [ObservableProperty] private bool _refreshBeforeRun;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(StartRunCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelRunCommand))]
+    private bool _isRunning;
+
+    [ObservableProperty] private double _progressPercentage;
+    [ObservableProperty] private string _progressMessage  = string.Empty;
+    [ObservableProperty] private bool   _isProgressIndeterminate = true;
+    [ObservableProperty] private string _statusMessage    = string.Empty;
 
     // ── Recent runs ───────────────────────────────────────────────────────────
     public ObservableCollection<RunEntity> RecentRuns { get; } = [];
@@ -75,15 +80,18 @@ public sealed partial class DashboardViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanStartRun))]
     private async Task StartRunAsync()
     {
-        _cts = new CancellationTokenSource();
-        IsRunning   = true;
-        StatusMessage = string.Empty;
+        _cts                    = new CancellationTokenSource();
+        IsRunning               = true;
+        StatusMessage           = string.Empty;
+        ProgressMessage         = string.Empty;
+        ProgressPercentage      = 0;
+        IsProgressIndeterminate = true;
 
         var progress = new Progress<PipelineProgress>(p =>
         {
-            ProgressPhase      = p.Phase;
-            ProgressProcessed  = p.Processed;
-            ProgressCandidates = p.Candidates;
+            ProgressMessage          = p.Message;
+            IsProgressIndeterminate  = p.Total == 0;
+            ProgressPercentage       = p.Total > 0 ? (double)p.Processed / p.Total * 100.0 : 0;
         });
 
         long runId = 0;
@@ -102,15 +110,15 @@ public sealed partial class DashboardViewModel : ObservableObject
 
             if (RefreshBeforeRun)
             {
-                ProgressPhase = "Refreshing catalog…";
+                ProgressMessage = "Refreshing catalog…";
                 await _cacheService.EnsureFreshAsync(config.Acquisition, _cts.Token);
             }
 
-            ProgressPhase = "Starting…";
+            ProgressMessage = "Starting…";
 
             var events = await _pipeline.RunAsync(config, null, progress, _cts.Token);
 
-            await _runSvc.CompleteRunAsync(runId, events, ProgressCandidates);
+            await _runSvc.CompleteRunAsync(runId, events, events.Count);
             StatusMessage = $"Completed — {events.Count} event(s) detected.";
         }
         catch (OperationCanceledException)
@@ -125,10 +133,12 @@ public sealed partial class DashboardViewModel : ObservableObject
         }
         finally
         {
-            IsRunning     = false;
+            IsRunning               = false;
             _cts?.Dispose();
-            _cts          = null;
-            ProgressPhase = string.Empty;
+            _cts                    = null;
+            ProgressMessage         = string.Empty;
+            ProgressPercentage      = 0;
+            IsProgressIndeterminate = true;
         }
 
         await RefreshCatalogStatusAsync();
@@ -137,8 +147,10 @@ public sealed partial class DashboardViewModel : ObservableObject
 
     private bool CanStartRun() => !IsRunning;
 
-    [RelayCommand(CanExecute = nameof(IsRunning))]
+    [RelayCommand(CanExecute = nameof(CanCancelRun))]
     private void CancelRun() => _cts?.Cancel();
+
+    private bool CanCancelRun() => IsRunning;
 
     private async Task RefreshCatalogStatusAsync()
     {

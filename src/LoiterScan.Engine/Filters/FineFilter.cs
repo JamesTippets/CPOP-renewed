@@ -17,15 +17,20 @@ internal static class FineFilter
         int stepMinutes,
         double thresholdKm,
         int bufferMinutes,
+        IProgress<PipelineProgress>? progress,
         CancellationToken ct)
     {
         var step   = TimeSpan.FromMinutes(stepMinutes);
         var buffer = TimeSpan.FromMinutes(bufferMinutes);
         var result = new List<CandidatePair>(candidates.Count);
 
-        foreach (var candidate in candidates)
+        for (int pi = 0; pi < candidates.Count; pi++)
         {
-            ct.ThrowIfCancellationRequested();
+            if (ct.IsCancellationRequested) break;
+            var candidate = candidates[pi];
+
+            progress?.Report(new PipelineProgress("Fine", pi + 1, candidates.Count, result.Count,
+                $"Fine filter: pair {pi + 1:N0} / {candidates.Count:N0}  ({result.Count:N0} surviving)"));
 
             var refinedWindows = new List<TimeWindow>();
 

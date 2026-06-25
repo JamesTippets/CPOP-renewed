@@ -111,6 +111,7 @@ public sealed partial class ConfigurationViewModel : ObservableObject
 
     // ── Pre-filter: other ─────────────────────────────────────────────────────
     [ObservableProperty] private bool _excludeDebris;
+    [ObservableProperty] private bool _excludeGroupPairsOnly;
     [ObservableProperty] private int  _maxEpochAgeDays = 3;
 
     // ── Acquisition ───────────────────────────────────────────────────────────
@@ -170,7 +171,8 @@ public sealed partial class ConfigurationViewModel : ObservableObject
         LoiterMinDuration  = entity.LoiterMinDurationMinutes;
         LoiterExcursion    = entity.LoiterExcursionAllowanceMinutes;
 
-        ExcludeDebris   = entity.ExcludeDebris;
+        ExcludeDebris          = entity.ExcludeDebris;
+        ExcludeGroupPairsOnly  = entity.ExcludeGroupPairsOnly;
         SetRegimeScopeFromString(entity.RegimeScope);
         MaxEpochAgeDays = entity.MaxEpochAgeDays;
 
@@ -215,8 +217,9 @@ public sealed partial class ConfigurationViewModel : ObservableObject
             FineToDetectionMinutes  = FineToDetection,
             LoiterMinDurationMinutes        = LoiterMinDuration,
             LoiterExcursionAllowanceMinutes = LoiterExcursion,
-            ExcludeDebris      = ExcludeDebris,
-            RegimeScope        = ComputeRegimeScopeString(),
+            ExcludeDebris         = ExcludeDebris,
+            ExcludeGroupPairsOnly = ExcludeGroupPairsOnly,
+            RegimeScope           = ComputeRegimeScopeString(),
             MaxEpochAgeDays    = MaxEpochAgeDays,
             AcquisitionSource  = AcquisitionSource.Equals("Space-Track", StringComparison.OrdinalIgnoreCase)
                                      ? "space-track" : "celestrak",

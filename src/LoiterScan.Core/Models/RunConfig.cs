@@ -21,6 +21,7 @@ public sealed record CascadeConfig(
 /// <summary>Pre-filter settings (spec §5.3).</summary>
 public sealed record PreFilterConfig(
     bool ExcludeDebris,
+    bool ExcludeGroupPairsOnly,
     string RegimeScope,
     int MaxEpochAgeDays,
     IReadOnlyList<string> ExcludedCountries,

@@ -58,8 +58,9 @@ public static class DbInitializer
             LoiterMinDurationMinutes        = loiter.GetProperty("minDurationMinutes").GetInt32(),
             LoiterExcursionAllowanceMinutes = loiter.GetProperty("excursionAllowanceMinutes").GetInt32(),
 
-            ExcludeDebris   = preFilter.GetProperty("excludeDebris").GetBoolean(),
-            RegimeScope     = preFilter.GetProperty("regimeScope").GetString() ?? "ALL",
+            ExcludeDebris         = preFilter.GetProperty("excludeDebris").GetBoolean(),
+            ExcludeGroupPairsOnly = preFilter.TryGetProperty("excludeGroupPairsOnly", out var egpo) && egpo.GetBoolean(),
+            RegimeScope           = preFilter.GetProperty("regimeScope").GetString() ?? "ALL",
             MaxEpochAgeDays = preFilter.TryGetProperty("maxEpochAgeDays", out var mea) ? mea.GetInt32() : 14,
 
             AcquisitionSource   = acq.GetProperty("source").GetString() ?? "celestrak",

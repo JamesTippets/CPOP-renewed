@@ -29,8 +29,9 @@ public sealed class ConfigService(IDbContextFactory<LoiterScanDbContext> factory
                 Buffers:   new BufferConfig(p.CoarseToFineMinutes, p.FineToDetectionMinutes),
                 Loiter:    new LoiterConfig(p.LoiterMinDurationMinutes, p.LoiterExcursionAllowanceMinutes)),
             PreFilter: new PreFilterConfig(
-                ExcludeDebris:    p.ExcludeDebris,
-                RegimeScope:      p.RegimeScope,
+                ExcludeDebris:         p.ExcludeDebris,
+                ExcludeGroupPairsOnly: p.ExcludeGroupPairsOnly,
+                RegimeScope:           p.RegimeScope,
                 MaxEpochAgeDays:  p.MaxEpochAgeDays,
                 ExcludedCountries: countries,
                 ExcludedGroups:    groups,

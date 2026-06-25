@@ -35,9 +35,12 @@ internal static class CoarseFilter
         var positions = new (double X, double Y, double Z)[objects.Count];
         var grid = new SpatialGrid(thresholdKm);
 
+        progress?.Report(new PipelineProgress("Coarse", 0, steps, 0,
+            $"Coarse filter: step 0 / {steps:N0}…"));
+
         for (int s = 0; s <= steps; s++)
         {
-            ct.ThrowIfCancellationRequested();
+            if (ct.IsCancellationRequested) break;
             var t = t0 + step * s;
 
             // Propagate all objects at this step; skip objects whose elements are invalid
@@ -78,9 +81,9 @@ internal static class CoarseFilter
                     times.Add(t);
                 }
             }
-
-            if (s % 100 == 0)
-                progress?.Report(new PipelineProgress("Coarse", s, flagged.Count));
+            
+            progress?.Report(new PipelineProgress("Coarse", s, steps, flagged.Count,
+                $"Coarse filter: step {s:N0} / {steps:N0}  ({flagged.Count:N0} candidate pairs)"));
         }
 
         // Build an object lookup for pair reconstruction
@@ -93,7 +96,8 @@ internal static class CoarseFilter
             result.Add(new CandidatePair(byNorad[key.Low], byNorad[key.High], windows));
         }
 
-        progress?.Report(new PipelineProgress("Coarse", steps, result.Count));
+        progress?.Report(new PipelineProgress("Coarse", steps, steps, result.Count,
+            $"Coarse filter: step {steps:N0} / {steps:N0}  ({result.Count:N0} candidate pairs)"));
         return result;
     }
 

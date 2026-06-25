@@ -171,7 +171,10 @@
                         <TextBlock Text="Excluded groups (one per line):" Margin="0 0 0 4"/>
                         <TextBox Text="{Binding ExcludedGroupsText, UpdateSourceTrigger=PropertyChanged}"
                                  AcceptsReturn="True" Height="72" Padding="4"
-                                 VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" Margin="0 0 0 12"/>
+                                 VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" Margin="0 0 0 6"/>
+                        <CheckBox Content="Exclude intra-group pairs only (allow cross-group pairings)"
+                                  IsChecked="{Binding ExcludeGroupPairsOnly}"
+                                  Margin="0 0 0 12"/>
                         <TextBlock Text="Excluded NORAD IDs (one per line):" Margin="0 0 0 4"/>
                         <TextBox Text="{Binding ExcludedIdsText, UpdateSourceTrigger=PropertyChanged}"
                                  AcceptsReturn="True" Height="72" Padding="4"

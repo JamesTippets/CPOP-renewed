@@ -32,8 +32,9 @@ public sealed class ConfigParamEntity
     public int LoiterExcursionAllowanceMinutes { get; set; }
 
     // Pre-filter
-    public bool   ExcludeDebris    { get; set; }
-    public string RegimeScope      { get; set; } = "ALL";
+    public bool   ExcludeDebris          { get; set; }
+    public bool   ExcludeGroupPairsOnly  { get; set; }
+    public string RegimeScope            { get; set; } = "ALL";
     public int    MaxEpochAgeDays  { get; set; } = 3;
 
     // Acquisition

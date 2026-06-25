@@ -7,8 +7,9 @@
     <Application.Resources>
 
         <!-- Value converters -->
-        <conv:InverseBoolConverter               x:Key="InverseBoolConverter"/>
-        <conv:BoolToVisibilityConverter          x:Key="BoolToVisibilityConverter"/>
+        <conv:InverseBoolConverter                x:Key="InverseBoolConverter"/>
+        <conv:BoolToVisibilityConverter           x:Key="BoolToVisibilityConverter"/>
+        <conv:InverseBoolToVisibilityConverter    x:Key="InverseBoolToVisibilityConverter"/>
         <conv:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVisibilityConverter"/>
 
         <!-- Nav rail button style -->
