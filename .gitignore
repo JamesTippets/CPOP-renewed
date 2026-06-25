@@ -1,0 +1,14 @@
+# Build outputs
+bin/
+obj/
+
+# Design-time SQLite file created by dotnet-ef
+loiterscan-design.db
+
+# User-local settings
+.vs/
+*.user
+
+# OS
+Thumbs.db
+.DS_Store

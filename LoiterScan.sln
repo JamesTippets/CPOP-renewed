@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -23,6 +23,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoiterScan.Acquisition.Tests", "tests\LoiterScan.Acquisition.Tests\LoiterScan.Acquisition.Tests.csproj", "{21810D7A-01D5-4FAF-B6CC-920D061F99E8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoiterScan.Analytics.Tests", "tests\LoiterScan.Analytics.Tests\LoiterScan.Analytics.Tests.csproj", "{1308EECE-89BC-4E50-B0CA-FA529ED24A8C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F2E9C86F-689A-4B58-8FDB-049A031A4F36}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoiterScan.Data.Tests", "tests\LoiterScan.Data.Tests\LoiterScan.Data.Tests.csproj", "{706E5BC2-0A2B-4D37-A1A4-9F4F8FC01819}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -74,8 +78,15 @@ Global
 		{1308EECE-89BC-4E50-B0CA-FA529ED24A8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1308EECE-89BC-4E50-B0CA-FA529ED24A8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1308EECE-89BC-4E50-B0CA-FA529ED24A8C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{706E5BC2-0A2B-4D37-A1A4-9F4F8FC01819}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{706E5BC2-0A2B-4D37-A1A4-9F4F8FC01819}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{706E5BC2-0A2B-4D37-A1A4-9F4F8FC01819}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{706E5BC2-0A2B-4D37-A1A4-9F4F8FC01819}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{706E5BC2-0A2B-4D37-A1A4-9F4F8FC01819} = {F2E9C86F-689A-4B58-8FDB-049A031A4F36}
 	EndGlobalSection
 EndGlobal
