@@ -99,27 +99,35 @@ public partial class EventDetailView : UserControl
         RangePlot.Plot.Axes.Rules.Clear();
         if (_vm.HasData && _vm.RangeKm is not null)
         {
-            RangePlot.Plot.Add.Scatter(_vm.RangeTimeMinutes!, _vm.RangeKm);
+            RangePlot.Plot.Add.Scatter(_vm.RangeTimeOADate!, _vm.RangeKm);
 
-            var vStart  = RangePlot.Plot.Add.VerticalLine(_vm.LoiterStartMin);
+            var vStart  = RangePlot.Plot.Add.VerticalLine(_vm.LoiterStartOA);
             vStart.Color = ScottPlot.Colors.Green;
 
-            var vEnd    = RangePlot.Plot.Add.VerticalLine(_vm.LoiterEndMin);
+            var vEnd    = RangePlot.Plot.Add.VerticalLine(_vm.LoiterEndOA);
             vEnd.Color   = ScottPlot.Colors.Red;
 
             var hThresh  = RangePlot.Plot.Add.HorizontalLine(_vm.ThresholdKm);
             hThresh.Color = ScottPlot.Colors.Orange;
 
-            RangePlot.Plot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.NumericFixedInterval(30);
+            var tickGen = new ScottPlot.TickGenerators.DateTimeFixedInterval(
+                new ScottPlot.TickGenerators.TimeUnits.Minute(), 30,
+                new ScottPlot.TickGenerators.TimeUnits.Minute(), 30,  // same as major: no intermediate minor-tick labels
+                dt => new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute / 30 * 30, 0, DateTimeKind.Utc));
+            tickGen.LabelFormatter = dt => dt.ToString("yyyy-MM-dd\nHH:mm (UTC)");
+            RangePlot.Plot.Axes.Bottom.TickGenerator = tickGen;
+            RangePlot.Plot.Axes.Bottom.TickLabelStyle.FontSize  = 8f;
+            RangePlot.Plot.Axes.Bottom.TickLabelStyle.Rotation  = 90;
+            RangePlot.Plot.Axes.Bottom.TickLabelStyle.Alignment = ScottPlot.Alignment.MiddleLeft;
 
-            double[] tMins = _vm.RangeTimeMinutes!;
-            var rangeLimits = new ScottPlot.AxisLimits(tMins[0], tMins[^1], 0, 10);
+            double[] oad = _vm.RangeTimeOADate!;
+            var rangeLimits = new ScottPlot.AxisLimits(oad[0], oad[^1], 0, 10);
             RangePlot.Plot.Axes.SetLimits(rangeLimits);
             RangePlot.Plot.Axes.Rules.Add(
                 new ScottPlot.AxisRules.MaximumBoundary(
                     RangePlot.Plot.Axes.Bottom, RangePlot.Plot.Axes.Left, rangeLimits));
 
-            RangePlot.Plot.XLabel("Time (min from window start)");
+            RangePlot.Plot.XLabel("Time (UTC)");
             RangePlot.Plot.YLabel("Range (km)");
         }
         RangePlot.Refresh();

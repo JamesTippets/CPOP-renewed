@@ -31,10 +31,10 @@ public sealed partial class EventDetailViewModel : ObservableObject
     public double[]? RicI  { get; private set; }
     public double[]? RicC  { get; private set; }
 
-    public double[]? RangeTimeMinutes { get; private set; }
+    public double[]? RangeTimeOADate  { get; private set; }
     public double[]? RangeKm          { get; private set; }
-    public double    LoiterStartMin   { get; private set; }
-    public double    LoiterEndMin     { get; private set; }
+    public double    LoiterStartOA    { get; private set; }
+    public double    LoiterEndOA      { get; private set; }
     public double    ThresholdKm { get; } = 5.0;
 
     public (double R, double I, DateTime TimeUtc)[] RicLabelPoints { get; private set; } = [];
@@ -62,7 +62,7 @@ public sealed partial class EventDetailViewModel : ObservableObject
     {
         HasData = false;
         RicR = RicI = RicC = null;
-        RangeTimeMinutes = RangeKm = null;
+        RangeTimeOADate = RangeKm = null;
         RicLabelPoints = [];
 
         await using var db = _factory.CreateDbContext();
@@ -122,16 +122,16 @@ public sealed partial class EventDetailViewModel : ObservableObject
 
             double dx = sB.X - sA.X, dy = sB.Y - sA.Y, dz = sB.Z - sA.Z;
             rng.Add(Math.Sqrt(dx * dx + dy * dy + dz * dz));
-            tMin.Add((t - t0).TotalMinutes);
+            tMin.Add(t.ToOADate());
         }
 
         RicR = [.. ricR];
         RicI = [.. ricI];
         RicC = [.. ricC];
-        RangeTimeMinutes = [.. tMin];
-        RangeKm          = [.. rng];
-        LoiterStartMin   = (ev.LoiterStartUtc - t0).TotalMinutes;
-        LoiterEndMin     = (ev.LoiterEndUtc   - t0).TotalMinutes;
+        RangeTimeOADate = [.. tMin];
+        RangeKm         = [.. rng];
+        LoiterStartOA   = ev.LoiterStartUtc.ToOADate();
+        LoiterEndOA     = ev.LoiterEndUtc.ToOADate();
 
         int caIdx = Math.Clamp((int)Math.Round((ev.CloseApproachUtc - t0).TotalMinutes), 0, steps - 1);
         RicLabelPoints = [
