@@ -40,7 +40,7 @@ public sealed partial class ResultsViewModel : ObservableObject
 
     public async Task LoadAsync()
     {
-        if (Events.Count > 0) return; // already populated — keep existing selection
+        if (Events.Count > 0) return;
         var latest = await _runSvc.GetRecentRunsAsync(1);
         if (latest.Count > 0) await LoadForRunAsync(latest[0].RunId);
     }
@@ -54,7 +54,11 @@ public sealed partial class ResultsViewModel : ObservableObject
 
         var evs = await _runSvc.GetEventsForRunAsync(runId);
         Events.Clear();
-        foreach (var e in evs) Events.Add(e);
+        for (int i = 0; i < evs.Count; i++)
+        {
+            evs[i].PairIndex = i + 1;
+            Events.Add(evs[i]);
+        }
         EventCount = evs.Count;
     }
 

@@ -130,6 +130,8 @@ internal static class LoiteringDetector
             LoiterStartUtc:   start,
             LoiterEndUtc:     end,
             DurationMinutes:  durationMinutes,
-            Confidence:       confidence);
+            Confidence:       confidence,
+            NameA:            pair.A.Name,
+            NameB:            pair.B.Name);
     }
 }

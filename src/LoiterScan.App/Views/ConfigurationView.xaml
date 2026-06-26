@@ -195,8 +195,8 @@
                                   MaxHeight="200"
                                   HeadersVisibility="Column">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="NORAD-A" Binding="{Binding PairKeyLow}"  Width="90"/>
-                                <DataGridTextColumn Header="NORAD-B" Binding="{Binding PairKeyHigh}" Width="90"/>
+                                <DataGridTextColumn Header="SatID A" Binding="{Binding PairKeyLow}"  Width="90"/>
+                                <DataGridTextColumn Header="SatID B" Binding="{Binding PairKeyHigh}" Width="90"/>
                                 <DataGridTemplateColumn Header="" Width="*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>

@@ -20,7 +20,7 @@ public sealed record PipelineProgress(
 
 /// <summary>
 /// Returned by <see cref="DetectionPipeline.RunAsync"/>. Contains the detected events and
-/// the number of candidate pairs that entered the fine filter (used to populate TotalPairsChecked).
+/// the number of candidate pairs the coarse filter identified (used to populate TotalPairsChecked).
 /// </summary>
 public sealed record PipelineResult(
     IReadOnlyList<LoiteringEvent> Events,
@@ -147,9 +147,17 @@ public sealed class DetectionPipeline
 
         ct.ThrowIfCancellationRequested();
 
-        progress?.Report(new PipelineProgress("Detection", events.Count, events.Count, events.Count,
-            $"Detection complete: {events.Count:N0} loitering event(s) ({sw.Elapsed.TotalSeconds:F1}s)"));
+        // Stamp each event with its pair's 1-based position in the gated candidate list.
+        var pairIndexMap = gated
+            .Select((p, i) => (Key: new PairKey(p.A.NoradId, p.B.NoradId), Index: i + 1))
+            .ToDictionary(x => x.Key, x => x.Index);
+        var indexedEvents = events
+            .Select(e => e with { PairIndex = pairIndexMap.TryGetValue(e.Pair, out var idx) ? idx : 0 })
+            .ToList();
 
-        return new PipelineResult(events, gated.Count);
+        progress?.Report(new PipelineProgress("Detection", indexedEvents.Count, indexedEvents.Count, indexedEvents.Count,
+            $"Detection complete: {indexedEvents.Count:N0} loitering event(s) ({sw.Elapsed.TotalSeconds:F1}s)"));
+
+        return new PipelineResult(indexedEvents, coarseCandidates.Count);
     }
 }

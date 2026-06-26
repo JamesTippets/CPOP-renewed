@@ -48,6 +48,9 @@ public sealed class RunService(IDbContextFactory<LoiterScanDbContext> factory)
                 PairKeyHigh     = ev.Pair.High,
                 NoradIdA        = ev.Pair.Low,
                 NoradIdB        = ev.Pair.High,
+                NameA           = ev.NameA,
+                NameB           = ev.NameB,
+                PairIndex       = ev.PairIndex > 0 ? ev.PairIndex : (int?)null,
                 MinRangeKm      = ev.MinRangeKm,
                 CloseApproachUtc = ev.CloseApproachUtc,
                 LoiterStartUtc  = ev.LoiterStartUtc,
@@ -82,10 +85,29 @@ public sealed class RunService(IDbContextFactory<LoiterScanDbContext> factory)
     public async Task<List<LoiteringEventEntity>> GetEventsForRunAsync(long runId)
     {
         await using var db = factory.CreateDbContext();
-        return await db.LoiteringEvents
+        var evs = await db.LoiteringEvents
             .Where(e => e.RunId == runId)
             .OrderBy(e => e.MinRangeKm)
             .ToListAsync();
+
+        // Back-fill names for events stored before NameA/NameB were added.
+        var needsName = evs.Where(e => e.NameA is null || e.NameB is null).ToList();
+        if (needsName.Count > 0)
+        {
+            var ids = needsName.SelectMany(e => new[] { e.NoradIdA, e.NoradIdB }).Distinct().ToList();
+            var nameMap = await db.CatalogObjects
+                .Where(o => ids.Contains(o.NoradId))
+                .Select(o => new { o.NoradId, o.Name })
+                .ToDictionaryAsync(o => o.NoradId, o => o.Name);
+
+            foreach (var ev in needsName)
+            {
+                if (ev.NameA is null && nameMap.TryGetValue(ev.NoradIdA, out var nA)) ev.NameA = nA;
+                if (ev.NameB is null && nameMap.TryGetValue(ev.NoradIdB, out var nB)) ev.NameB = nB;
+            }
+        }
+
+        return evs;
     }
 
     public async Task<List<RunRecord>> GetAllRunRecordsAsync()

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace LoiterScan.Data.Entities;
 
 /// <summary>
@@ -16,8 +18,16 @@ public sealed class LoiteringEventEntity
     public long PairKeyHigh { get; set; }
 
     // The two objects (denormalised for query convenience)
-    public long NoradIdA { get; set; }
-    public long NoradIdB { get; set; }
+    public long    NoradIdA { get; set; }
+    public long    NoradIdB { get; set; }
+    public string? NameA    { get; set; }
+    public string? NameB    { get; set; }
+
+    public int? PairIndex { get; set; }
+
+    [NotMapped] public string PairKeyDisplay => PairIndex is > 0 ? $"{PairIndex}" : "—";
+    [NotMapped] public string SatADisplay    => NameA is not null ? $"{NoradIdA} - {NameA}" : $"{NoradIdA}";
+    [NotMapped] public string SatBDisplay    => NameB is not null ? $"{NoradIdB} - {NameB}" : $"{NoradIdB}";
 
     // Close-approach details
     public double   MinRangeKm       { get; set; }

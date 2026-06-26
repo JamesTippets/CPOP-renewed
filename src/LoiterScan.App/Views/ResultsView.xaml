@@ -28,9 +28,9 @@
                 </ContextMenu>
             </DataGrid.ContextMenu>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Pair Key"         Binding="{Binding PairKeyLow, StringFormat='{}{0}'}" Width="90"/>
-                <DataGridTextColumn Header="NORAD-A"          Binding="{Binding NoradIdA}"   Width="80"/>
-                <DataGridTextColumn Header="NORAD-B"          Binding="{Binding NoradIdB}"   Width="80"/>
+                <DataGridTextColumn Header="Pair Key"         Binding="{Binding PairKeyDisplay}" Width="110"/>
+                <DataGridTextColumn Header="Sat A"            Binding="{Binding SatADisplay}" Width="180"/>
+                <DataGridTextColumn Header="Sat B"            Binding="{Binding SatBDisplay}" Width="180"/>
                 <DataGridTextColumn Header="Min Range (km)"   Binding="{Binding MinRangeKm,  StringFormat='F2'}" Width="110"/>
                 <DataGridTextColumn Header="Close Approach (UTC)" Binding="{Binding CloseApproachUtc, StringFormat='yyyy-MM-dd HH:mm'}" Width="160"/>
                 <DataGridTextColumn Header="Loiter Start (UTC)"   Binding="{Binding LoiterStartUtc,  StringFormat='yyyy-MM-dd HH:mm'}" Width="155"/>
