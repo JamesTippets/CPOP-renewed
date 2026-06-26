@@ -38,7 +38,12 @@ public sealed partial class ResultsViewModel : ObservableObject
         _configSvc = configSvc;
     }
 
-    public async Task LoadAsync() { }
+    public async Task LoadAsync()
+    {
+        if (Events.Count > 0) return; // already populated — keep existing selection
+        var latest = await _runSvc.GetRecentRunsAsync(1);
+        if (latest.Count > 0) await LoadForRunAsync(latest[0].RunId);
+    }
 
     public async Task LoadForRunAsync(long runId)
     {

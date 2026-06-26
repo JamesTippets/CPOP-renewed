@@ -94,11 +94,12 @@
                       VirtualizingStackPanel.IsVirtualizing="True"
                       MaxHeight="300">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Run ID"    Binding="{Binding RunId}"    Width="70"/>
-                    <DataGridTextColumn Header="Started"   Binding="{Binding StartedAt, StringFormat='yyyy-MM-dd HH:mm'}" Width="140"/>
-                    <DataGridTextColumn Header="Status"    Binding="{Binding Status}"   Width="90"/>
-                    <DataGridTextColumn Header="Events"    Binding="{Binding EventsDetected}" Width="70"/>
+                    <DataGridTextColumn Header="Run ID"       Binding="{Binding RunId}"             Width="70"/>
+                    <DataGridTextColumn Header="Started"      Binding="{Binding StartedAt, StringFormat='yyyy-MM-dd HH:mm'}" Width="140"/>
+                    <DataGridTextColumn Header="Status"       Binding="{Binding Status}"            Width="90"/>
+                    <DataGridTextColumn Header="Events"       Binding="{Binding EventsDetected}"    Width="60"/>
                     <DataGridTextColumn Header="Pairs Checked" Binding="{Binding TotalPairsChecked}" Width="100"/>
+                    <DataGridTextColumn Header="Duration"     Binding="{Binding DurationLabel}"     Width="80"/>
                 </DataGrid.Columns>
             </DataGrid>
         </StackPanel>

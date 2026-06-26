@@ -13,6 +13,7 @@ public sealed partial class ShellViewModel : ObservableObject
     private readonly IServiceProvider _sp;
 
     [ObservableProperty] private object? _activeViewModel;
+    [ObservableProperty] private string  _activePage = "Dashboard";
 
     public DashboardViewModel     Dashboard     { get; }
     public ResultsViewModel       Results       { get; }
@@ -36,19 +37,21 @@ public sealed partial class ShellViewModel : ObservableObject
         Results.EventSelected    += OnEventSelected;
         EventDetail.NavigateBack += OnEventDetailBack;
 
-        // Start on Dashboard
+        // Start on Dashboard; pre-warm Results with the latest run in the background
         ActiveViewModel = Dashboard;
         _ = Dashboard.LoadAsync();
+        _ = Results.LoadAsync();
     }
 
-    [RelayCommand] private void NavigateDashboard()     { ActiveViewModel = Dashboard; }
-    [RelayCommand] private async Task NavigateResults() { ActiveViewModel = Results; await Results.LoadAsync(); }
-    [RelayCommand] private async Task NavigateCatalog() { ActiveViewModel = Catalog; await Catalog.LoadAsync(); }
-    [RelayCommand] private async Task NavigateConfig()  { ActiveViewModel = Configuration; await Configuration.LoadAsync(); }
-    [RelayCommand] private async Task NavigateAnalytics(){ ActiveViewModel = Analytics; await Analytics.LoadAsync(); }
+    [RelayCommand] private void NavigateDashboard()      { ActiveViewModel = Dashboard; ActivePage = "Dashboard"; }
+    [RelayCommand] private async Task NavigateResults()  { ActivePage = "Results"; ActiveViewModel = Results; await Results.LoadAsync(); }
+    [RelayCommand] private async Task NavigateCatalog()  { ActivePage = "Catalog"; ActiveViewModel = Catalog; await Catalog.LoadAsync(); }
+    [RelayCommand] private async Task NavigateConfig()   { ActivePage = "Configuration"; ActiveViewModel = Configuration; await Configuration.LoadAsync(); }
+    [RelayCommand] private async Task NavigateAnalytics(){ ActivePage = "Analytics"; ActiveViewModel = Analytics; await Analytics.LoadAsync(); }
 
     private async void OnRunSelected(long runId)
     {
+        ActivePage      = "Results";
         ActiveViewModel = Results;
         await Results.LoadForRunAsync(runId);
     }

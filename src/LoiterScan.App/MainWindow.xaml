@@ -14,11 +14,66 @@
             <TextBlock Text="LOITERSCAN"
                        Foreground="#5B8DB8" FontSize="11" FontWeight="Bold"
                        Margin="16 20 16 24"/>
-            <Button Content="Dashboard"     Command="{Binding NavigateDashboardCommand}"  Style="{StaticResource NavButtonStyle}"/>
-            <Button Content="Results"       Command="{Binding NavigateResultsCommand}"    Style="{StaticResource NavButtonStyle}"/>
-            <Button Content="Catalog"       Command="{Binding NavigateCatalogCommand}"    Style="{StaticResource NavButtonStyle}"/>
-            <Button Content="Configuration" Command="{Binding NavigateConfigCommand}"     Style="{StaticResource NavButtonStyle}"/>
-            <Button Content="Analytics"     Command="{Binding NavigateAnalyticsCommand}"  Style="{StaticResource NavButtonStyle}"/>
+            <Button Content="Dashboard" Command="{Binding NavigateDashboardCommand}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ActivePage}" Value="Dashboard">
+                                <Setter Property="Background" Value="#1565C0"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="Results" Command="{Binding NavigateResultsCommand}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ActivePage}" Value="Results">
+                                <Setter Property="Background" Value="#1565C0"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="Catalog" Command="{Binding NavigateCatalogCommand}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ActivePage}" Value="Catalog">
+                                <Setter Property="Background" Value="#1565C0"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="Configuration" Command="{Binding NavigateConfigCommand}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ActivePage}" Value="Configuration">
+                                <Setter Property="Background" Value="#1565C0"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="Analytics" Command="{Binding NavigateAnalyticsCommand}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ActivePage}" Value="Analytics">
+                                <Setter Property="Background" Value="#1565C0"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
         </StackPanel>
 
         <!-- Content area -->

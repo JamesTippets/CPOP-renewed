@@ -24,6 +24,19 @@ public sealed class RunEntity
 
     public int? TotalPairsChecked { get; set; }
     public int? EventsDetected    { get; set; }
+    public int? DurationSeconds   { get; set; }
+
+    public string? DurationLabel
+    {
+        get
+        {
+            if (!DurationSeconds.HasValue) return null;
+            int s = DurationSeconds.Value;
+            if (s < 60)   return $"{s}s";
+            if (s < 3600) return $"{s / 60}m {s % 60}s";
+            return $"{s / 3600}h {s / 60 % 60}m";
+        }
+    }
 
     public ICollection<LoiteringEventEntity> Events { get; set; } = [];
 }

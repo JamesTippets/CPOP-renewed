@@ -34,9 +34,10 @@ public sealed class RunService(IDbContextFactory<LoiterScanDbContext> factory)
         await using var db = factory.CreateDbContext();
         var run = await db.Runs.FindAsync(runId) ?? throw new InvalidOperationException($"Run {runId} not found");
 
-        run.Status           = "completed";
+        run.Status            = "completed";
         run.TotalPairsChecked = totalPairs;
-        run.EventsDetected   = events.Count;
+        run.EventsDetected    = events.Count;
+        run.DurationSeconds   = (int)(DateTime.UtcNow - run.StartedAt).TotalSeconds;
 
         foreach (var ev in events)
         {
@@ -64,7 +65,8 @@ public sealed class RunService(IDbContextFactory<LoiterScanDbContext> factory)
         await using var db = factory.CreateDbContext();
         var run = await db.Runs.FindAsync(runId);
         if (run is null) return;
-        run.Status = reason == "cancelled" ? "cancelled" : "failed";
+        run.Status          = reason == "cancelled" ? "cancelled" : "failed";
+        run.DurationSeconds = (int)(DateTime.UtcNow - run.StartedAt).TotalSeconds;
         await db.SaveChangesAsync();
     }
 

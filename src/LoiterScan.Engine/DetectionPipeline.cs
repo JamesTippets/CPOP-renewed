@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using LoiterScan.Core.Abstractions;
 using LoiterScan.Core.Models;
 using LoiterScan.Engine.Filters;
@@ -18,6 +19,14 @@ public sealed record PipelineProgress(
     string Message = "");
 
 /// <summary>
+/// Returned by <see cref="DetectionPipeline.RunAsync"/>. Contains the detected events and
+/// the number of candidate pairs that entered the fine filter (used to populate TotalPairsChecked).
+/// </summary>
+public sealed record PipelineResult(
+    IReadOnlyList<LoiteringEvent> Events,
+    int CoarsePairsChecked);
+
+/// <summary>
 /// Orchestrates the four-tier cascade: pre-filter → coarse (15 min / 50 km) →
 /// fine (5 min / 25 km, windowed ±30 min) → loitering detection (1 min / 5 km,
 /// contiguous ≥ 1 h with ≤ 5-min bridged excursions). Runs off the UI thread with
@@ -36,33 +45,36 @@ public sealed class DetectionPipeline
 
     /// <param name="config">Run configuration (cascade params + exclusions).</param>
     /// <param name="t0">Propagation epoch (default: UtcNow at call time).</param>
-    public async Task<IReadOnlyList<LoiteringEvent>> RunAsync(
+    public async Task<PipelineResult> RunAsync(
         RunConfig config,
         DateTime? t0 = null,
         IProgress<PipelineProgress>? progress = null,
         CancellationToken ct = default)
     {
-        var origin = t0 ?? DateTime.UtcNow;
-        var cascade = config.Cascade;
+        var origin    = t0 ?? DateTime.UtcNow;
+        var cascade   = config.Cascade;
         var preFilter = config.PreFilter;
+        var sw        = Stopwatch.StartNew();
 
         // ── 0. Fetch catalog ─────────────────────────────────────────────────
         progress?.Report(new PipelineProgress("Fetch", 0, 0, 0, "Fetching catalog…"));
         var catalog = await _catalog.FetchCatalogAsync(ct);
         progress?.Report(new PipelineProgress("Fetch", 1, 1, catalog.Count,
-            $"Fetched {catalog.Count:N0} objects"));
+            $"Fetched {catalog.Count:N0} objects ({sw.Elapsed.TotalSeconds:F1}s)"));
 
         // ── 1. Pre-filter ────────────────────────────────────────────────────
+        sw.Restart();
         progress?.Report(new PipelineProgress("PreFilter", 0, catalog.Count, 0,
             $"Pre-filter: 0 / {catalog.Count:N0} objects…"));
         var survivors = PreFilter.FilterObjects(catalog, preFilter, origin);
         progress?.Report(new PipelineProgress("PreFilter", catalog.Count, catalog.Count, survivors.Count,
-            $"Pre-filter complete: {survivors.Count:N0} / {catalog.Count:N0} objects survive"));
+            $"Pre-filter complete: {survivors.Count:N0} / {catalog.Count:N0} objects survive ({sw.Elapsed.TotalSeconds:F1}s)"));
 
         // ── 1b. Propagation pre-validation ───────────────────────────────────
         // Try one propagation per survivor at the run epoch. Objects that fail
         // (decayed, negative eccentricity, degenerate elements) are silently
         // discarded — one check here avoids repeated failures every timestep.
+        sw.Restart();
         progress?.Report(new PipelineProgress("Validate", 0, survivors.Count, 0,
             $"Validating: 0 / {survivors.Count:N0} objects…"));
         var validated = new List<CatalogObject>(survivors.Count);
@@ -76,9 +88,10 @@ public sealed class DetectionPipeline
                     $"Validating: {i + 1:N0} / {survivors.Count:N0}  ({validated.Count:N0} valid)"));
         }
         progress?.Report(new PipelineProgress("Validate", validated.Count, validated.Count, validated.Count,
-            $"Validation complete: {validated.Count:N0} of {survivors.Count:N0} objects propagable"));
+            $"Validation complete: {validated.Count:N0} of {survivors.Count:N0} objects propagable ({sw.Elapsed.TotalSeconds:F1}s)"));
 
         // ── 2. Coarse filter (spatial index) ─────────────────────────────────
+        sw.Restart();
         var coarseCandidates = await Task.Run(() =>
             CoarseFilter.Run(
                 validated, _propagator, origin,
@@ -92,6 +105,7 @@ public sealed class DetectionPipeline
         // (The filters exit their loops via IsCancellationRequested rather than throwing,
         //  which avoids first-chance breaks on the thread-pool thread.)
         ct.ThrowIfCancellationRequested();
+        var coarseElapsed = sw.Elapsed;
 
         // Apply geometric gating, then drop explicitly excluded pairs
         // (co-orbital / docked objects that always trigger false positives).
@@ -103,9 +117,10 @@ public sealed class DetectionPipeline
             .ToList();
 
         progress?.Report(new PipelineProgress("Coarse", gated.Count, gated.Count, gated.Count,
-            $"Coarse complete: {gated.Count:N0} candidate pairs after gating"));
+            $"Coarse complete: {gated.Count:N0} candidate pairs after gating ({coarseElapsed.TotalSeconds:F1}s)"));
 
         // ── 3. Fine filter ───────────────────────────────────────────────────
+        sw.Restart();
         var fineCandidates = await Task.Run(() =>
             FineFilter.Run(
                 gated, _propagator,
@@ -117,9 +132,10 @@ public sealed class DetectionPipeline
         ct.ThrowIfCancellationRequested();
 
         progress?.Report(new PipelineProgress("Fine", fineCandidates.Count, fineCandidates.Count, fineCandidates.Count,
-            $"Fine filter complete: {fineCandidates.Count:N0} pairs remain"));
+            $"Fine filter complete: {fineCandidates.Count:N0} pairs remain ({sw.Elapsed.TotalSeconds:F1}s)"));
 
         // ── 4. Loitering detection ───────────────────────────────────────────
+        sw.Restart();
         var events = await Task.Run(() =>
             LoiteringDetector.Run(
                 fineCandidates, _propagator,
@@ -132,7 +148,8 @@ public sealed class DetectionPipeline
         ct.ThrowIfCancellationRequested();
 
         progress?.Report(new PipelineProgress("Detection", events.Count, events.Count, events.Count,
-            $"Detection complete: {events.Count:N0} loitering event(s)"));
-        return events;
+            $"Detection complete: {events.Count:N0} loitering event(s) ({sw.Elapsed.TotalSeconds:F1}s)"));
+
+        return new PipelineResult(events, gated.Count);
     }
 }

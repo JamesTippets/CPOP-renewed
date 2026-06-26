@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LoiterScan.App.Services;
@@ -116,10 +117,12 @@ public sealed partial class DashboardViewModel : ObservableObject
 
             ProgressMessage = "Starting…";
 
-            var events = await _pipeline.RunAsync(config, null, progress, _cts.Token);
+            var runSw  = Stopwatch.StartNew();
+            var result = await _pipeline.RunAsync(config, null, progress, _cts.Token);
+            runSw.Stop();
 
-            await _runSvc.CompleteRunAsync(runId, events, events.Count);
-            StatusMessage = $"Completed — {events.Count} event(s) detected.";
+            await _runSvc.CompleteRunAsync(runId, result.Events, result.CoarsePairsChecked);
+            StatusMessage = $"Completed — {result.Events.Count} event(s) detected in {FormatElapsed(runSw.Elapsed)}.";
         }
         catch (OperationCanceledException)
         {
@@ -151,6 +154,13 @@ public sealed partial class DashboardViewModel : ObservableObject
     private void CancelRun() => _cts?.Cancel();
 
     private bool CanCancelRun() => IsRunning;
+
+    private static string FormatElapsed(TimeSpan t)
+    {
+        if (t.TotalSeconds < 60)  return $"{t.TotalSeconds:F1}s";
+        if (t.TotalMinutes < 60)  return $"{(int)t.TotalMinutes}m {t.Seconds}s";
+        return $"{(int)t.TotalHours}h {t.Minutes}m";
+    }
 
     private async Task RefreshCatalogStatusAsync()
     {
