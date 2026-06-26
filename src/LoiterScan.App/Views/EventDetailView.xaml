@@ -19,13 +19,13 @@
             <UniformGrid Columns="2" Margin="0 0 0 8">
                 <Border Background="#E3F2FD" CornerRadius="4" Padding="10" Margin="0 0 4 0">
                     <StackPanel>
-                        <TextBlock Text="Object A" Foreground="#555" FontSize="11"/>
+                        <TextBlock Text="SatID A" Foreground="#555" FontSize="11"/>
                         <TextBlock Text="{Binding ObjectALabel}" FontWeight="Bold" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
                 <Border Background="#E3F2FD" CornerRadius="4" Padding="10" Margin="4 0 0 0">
                     <StackPanel>
-                        <TextBlock Text="Object B" Foreground="#555" FontSize="11"/>
+                        <TextBlock Text="SatID B" Foreground="#555" FontSize="11"/>
                         <TextBlock Text="{Binding ObjectBLabel}" FontWeight="Bold" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
@@ -41,8 +41,8 @@
                 </Border>
                 <Border Background="#F5F5F5" CornerRadius="4" Padding="10" Margin="4 0 4 0">
                     <StackPanel>
-                        <TextBlock Text="Close Approach (local)" Foreground="#555" FontSize="11"/>
-                        <TextBlock Text="{Binding CloseApproach}" FontSize="13" FontWeight="Bold" TextWrapping="Wrap"/>
+                        <TextBlock Text="Close Approach (UTC)" Foreground="#555" FontSize="11"/>
+                        <TextBlock Text="{Binding CloseApproach}" FontSize="18" FontWeight="Bold" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
                 <Border Background="#F5F5F5" CornerRadius="4" Padding="10" Margin="4 0 0 0">

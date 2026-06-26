@@ -28,9 +28,68 @@ public partial class EventDetailView : UserControl
         if (_vm is null) return;
 
         RicPlot.Plot.Clear();
+        RicPlot.Plot.Axes.Rules.Clear();
         if (_vm.HasData && _vm.RicR is not null)
         {
-            RicPlot.Plot.Add.Scatter(_vm.RicR, _vm.RicI!);
+            // Dark grey background for contrast against the warm gradient colours
+            RicPlot.Plot.DataBackground.Color = new ScottPlot.Color(45, 45, 45, 255);
+            var ricStyle = RicPlot.Plot.GetStyle();
+            ricStyle.AxisColor          = new ScottPlot.Color(200, 200, 200, 255);
+            ricStyle.GridMajorLineColor = new ScottPlot.Color(75, 75, 75, 255);
+            RicPlot.Plot.SetStyle(ricStyle);
+
+            // Cool-to-hot gradient: draw N-1 individually coloured line segments
+            var cmap = new ScottPlot.Colormaps.Turbo();
+            int n = _vm.RicR.Length;
+            for (int i = 0; i < n - 1; i++)
+            {
+                double t = (double)i / Math.Max(n - 2, 1);
+                var seg = RicPlot.Plot.Add.ScatterLine(
+                    new[] { _vm.RicR[i], _vm.RicR[i + 1] },
+                    new[] { _vm.RicI![i], _vm.RicI[i + 1] },
+                    cmap.GetColor(t));
+                seg.LineWidth = 2f;
+            }
+
+            // Text-bubble timestamp labels for start, CA, and end.
+            // First and last points sit on opposite Y boundaries, so detect which is on top
+            // to ensure the label always hangs inward (away from the boundary it's near).
+            bool firstAboveLast = _vm.RicLabelPoints.Length >= 3 &&
+                                  _vm.RicLabelPoints[0].I > _vm.RicLabelPoints[2].I;
+
+            for (int i = 0; i < _vm.RicLabelPoints.Length; i++)
+            {
+                var (r, ic, timeUtc) = _vm.RicLabelPoints[i];
+                var txt = RicPlot.Plot.Add.Text(timeUtc.ToString("yyyy-MM-dd\nHH:mm UTC"), r, ic);
+                txt.LabelFontSize        = 8.5f;
+                txt.LabelBackgroundColor = ScottPlot.Colors.White;
+                txt.LabelBorderColor     = ScottPlot.Colors.Gray;
+                txt.LabelBorderWidth     = 1f;
+                txt.LabelBorderRadius    = 4f;
+                txt.LabelPadding         = 4f;
+                (txt.LabelAlignment, txt.LabelOffsetX, txt.LabelOffsetY) = i switch {
+                    0 when firstAboveLast  => (ScottPlot.Alignment.UpperLeft,   8f,   8f),  // first near top  → label hangs down-right
+                    0                      => (ScottPlot.Alignment.LowerLeft,   8f,  -8f),  // first near bottom → label hangs up-right
+                    1                      => (ScottPlot.Alignment.LowerCenter, 0f, -12f),  // CA in interior → label above
+                    _ when !firstAboveLast => (ScottPlot.Alignment.UpperRight, -8f,   8f),  // last near top  → label hangs down-left
+                    _                      => (ScottPlot.Alignment.LowerRight, -8f,  -8f),  // last near bottom → label hangs up-left
+                };
+            }
+
+            // Initial view + maximum zoom-out boundary: X ±1 km beyond farthest radial; Y 1 km beyond first/last in-track
+            double maxAbsR = 0;
+            foreach (var v in _vm.RicR) if (Math.Abs(v) > maxAbsR) maxAbsR = Math.Abs(v);
+            double firstI = _vm.RicI![0];
+            double lastI  = _vm.RicI[n - 1];
+            var ricLimits = new ScottPlot.AxisLimits(
+                -(maxAbsR + 1), maxAbsR + 1,
+                Math.Min(firstI, lastI) - 1,
+                Math.Max(firstI, lastI) + 1);
+            RicPlot.Plot.Axes.SetLimits(ricLimits);
+            RicPlot.Plot.Axes.Rules.Add(
+                new ScottPlot.AxisRules.MaximumBoundary(
+                    RicPlot.Plot.Axes.Bottom, RicPlot.Plot.Axes.Left, ricLimits));
+
             RicPlot.Plot.XLabel("Radial (km)");
             RicPlot.Plot.YLabel("In-track (km)");
         }

@@ -37,6 +37,8 @@ public sealed partial class EventDetailViewModel : ObservableObject
     public double    LoiterEndMin     { get; private set; }
     public double    ThresholdKm { get; } = 5.0;
 
+    public (double R, double I, DateTime TimeUtc)[] RicLabelPoints { get; private set; } = [];
+
     public bool HasData { get; private set; }
 
     /// <summary>Raised after plot data is ready so the view can refresh its WpfPlot controls.</summary>
@@ -61,6 +63,7 @@ public sealed partial class EventDetailViewModel : ObservableObject
         HasData = false;
         RicR = RicI = RicC = null;
         RangeTimeMinutes = RangeKm = null;
+        RicLabelPoints = [];
 
         await using var db = _factory.CreateDbContext();
         var ev = await db.LoiteringEvents.FindAsync(eventId);
@@ -68,7 +71,7 @@ public sealed partial class EventDetailViewModel : ObservableObject
         Event = ev;
 
         MinRangeKm       = ev.MinRangeKm;
-        CloseApproach    = ev.CloseApproachUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        CloseApproach    = ev.CloseApproachUtc.ToString("yyyy-MM-dd HH:mm") + " UTC";
         DurationMinutes  = ev.DurationMinutes;
         Confidence       = ev.Confidence;
 
@@ -129,6 +132,13 @@ public sealed partial class EventDetailViewModel : ObservableObject
         RangeKm          = [.. rng];
         LoiterStartMin   = (ev.LoiterStartUtc - t0).TotalMinutes;
         LoiterEndMin     = (ev.LoiterEndUtc   - t0).TotalMinutes;
+
+        int caIdx = Math.Clamp((int)Math.Round((ev.CloseApproachUtc - t0).TotalMinutes), 0, steps - 1);
+        RicLabelPoints = [
+            (ricR[0],          ricI[0],          t0),
+            (ricR[caIdx],      ricI[caIdx],      t0 + TimeSpan.FromMinutes(caIdx)),
+            (ricR[steps - 1],  ricI[steps - 1],  t0 + TimeSpan.FromMinutes(steps - 1)),
+        ];
     }
 
     // Decomposes relative position into Radial / In-track / Cross-track (RIC) frame.
