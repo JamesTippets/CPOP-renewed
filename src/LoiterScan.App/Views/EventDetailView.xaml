@@ -1,0 +1,77 @@
+<UserControl x:Class="LoiterScan.App.Views.EventDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sp="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16">
+
+            <!-- Back navigation -->
+            <Button Content="&#x2190; Back to Results"
+                    Command="{Binding GoBackCommand}"
+                    HorizontalAlignment="Left"
+                    Padding="8 4" Margin="0 0 0 12"
+                    Background="Transparent" BorderBrush="#BDBDBD"
+                    Cursor="Hand"/>
+
+            <!-- Header -->
+            <TextBlock Text="Event Detail" FontSize="16" FontWeight="Bold" Margin="0 0 0 12"/>
+
+            <UniformGrid Columns="2" Margin="0 0 0 8">
+                <Border Background="#E3F2FD" CornerRadius="4" Padding="10" Margin="0 0 4 0">
+                    <StackPanel>
+                        <TextBlock Text="SatID A" Foreground="#555" FontSize="11"/>
+                        <TextBlock Text="{Binding ObjectALabel}" FontWeight="Bold" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#E3F2FD" CornerRadius="4" Padding="10" Margin="4 0 0 0">
+                    <StackPanel>
+                        <TextBlock Text="SatID B" Foreground="#555" FontSize="11"/>
+                        <TextBlock Text="{Binding ObjectBLabel}" FontWeight="Bold" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Metric cards -->
+            <UniformGrid Columns="3" Margin="0 0 0 16">
+                <Border Background="#F5F5F5" CornerRadius="4" Padding="10" Margin="0 0 4 0">
+                    <StackPanel>
+                        <TextBlock Text="Min Range" Foreground="#555" FontSize="11"/>
+                        <TextBlock Text="{Binding MinRangeKm, StringFormat='{}{0:F2} km'}" FontSize="18" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#F5F5F5" CornerRadius="4" Padding="10" Margin="4 0 4 0">
+                    <StackPanel>
+                        <TextBlock Text="Close Approach (UTC)" Foreground="#555" FontSize="11"/>
+                        <TextBlock Text="{Binding CloseApproach}" FontSize="18" FontWeight="Bold" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#F5F5F5" CornerRadius="4" Padding="10" Margin="4 0 0 0">
+                    <StackPanel>
+                        <TextBlock Text="Duration" Foreground="#555" FontSize="11"/>
+                        <TextBlock Text="{Binding DurationMinutes, StringFormat='{}{0:F0} min'}" FontSize="18" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Plots: RIC and Range vs Time side by side -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="RIC Relative-Motion Plot" FontWeight="SemiBold" Margin="0 0 0 4"/>
+                    <sp:WpfPlot x:Name="RicPlot" Height="300"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Range vs Time" FontWeight="SemiBold" Margin="0 0 0 4"/>
+                    <sp:WpfPlot x:Name="RangePlot" Height="300"/>
+                </StackPanel>
+            </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

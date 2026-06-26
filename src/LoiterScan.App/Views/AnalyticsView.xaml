@@ -1,0 +1,62 @@
+<UserControl x:Class="LoiterScan.App.Views.AnalyticsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sp="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF">
+    <DockPanel Margin="16">
+
+        <!-- Header row -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0 0 0 12">
+            <TextBlock Text="Analytics" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+            <ProgressBar IsIndeterminate="True" Width="80" Height="6" Margin="16 0 0 0"
+                         VerticalAlignment="Center"
+                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        </StackPanel>
+
+        <!-- Summary cards -->
+        <UniformGrid DockPanel.Dock="Top" Columns="3" Margin="0 0 0 16">
+            <Border Background="#1E3A5F" CornerRadius="6" Margin="0 0 8 0" Padding="12">
+                <StackPanel>
+                    <TextBlock Text="Total Runs"   Foreground="#9DB8D9" FontSize="11"/>
+                    <TextBlock Text="{Binding TotalRuns}"   Foreground="White" FontSize="28" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+            <Border Background="#1E3A5F" CornerRadius="6" Margin="0 0 8 0" Padding="12">
+                <StackPanel>
+                    <TextBlock Text="Total Events"  Foreground="#9DB8D9" FontSize="11"/>
+                    <TextBlock Text="{Binding TotalEvents}" Foreground="White" FontSize="28" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+            <Border Background="#1E3A5F" CornerRadius="6" Padding="12">
+                <StackPanel>
+                    <TextBlock Text="Unique Pairs"  Foreground="#9DB8D9" FontSize="11"/>
+                    <TextBlock Text="{Binding UniquePairs}" Foreground="White" FontSize="28" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+
+        <!-- Trend chart -->
+        <sp:WpfPlot x:Name="TrendPlot" DockPanel.Dock="Top" Height="230" Margin="0 0 0 12"/>
+
+        <!-- Recurring pairs header -->
+        <TextBlock DockPanel.Dock="Top" Text="Recurring Pairs" FontSize="14" FontWeight="Bold" Margin="0 0 0 6"/>
+
+        <!-- Recurring pairs table -->
+        <DataGrid ItemsSource="{Binding RecurringPairs}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  IsReadOnly="True"
+                  VirtualizingStackPanel.IsVirtualizing="True"
+                  EnableRowVirtualization="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="NORAD-A"        Binding="{Binding Pair.Low}"                          Width="90"/>
+                <DataGridTextColumn Header="NORAD-B"        Binding="{Binding Pair.High}"                         Width="90"/>
+                <DataGridTextColumn Header="Runs"           Binding="{Binding RecurrenceCount}"                   Width="55"/>
+                <DataGridTextColumn Header="Episodes"       Binding="{Binding EpisodeCount}"                      Width="75"/>
+                <DataGridTextColumn Header="First Seen"     Binding="{Binding FirstSeen, StringFormat='yyyy-MM-dd'}" Width="100"/>
+                <DataGridTextColumn Header="Last Seen"      Binding="{Binding LastSeen,  StringFormat='yyyy-MM-dd'}" Width="100"/>
+                <DataGridTextColumn Header="Min Range (km)" Binding="{Binding AllTimeMinRangeKm, StringFormat='F2'}" Width="110"/>
+                <DataGridTextColumn Header="Trend"          Binding="{Binding Trend}"                             Width="80"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

@@ -9,13 +9,15 @@
   },
   "preFilter": {
     "excludeDebris": false,
+    "excludeGroupPairsOnly": false,
     "regimeScope": "ALL",
+    "maxEpochAgeDays": 3,
     "excludedCountries": [],
     "excludedGroups": ["starlink"],
     "excludedIds": []
   },
   "acquisition": {
     "source": "celestrak",
-    "refreshBeforeRun": true
+    "refreshBeforeRun": false
   }
 }

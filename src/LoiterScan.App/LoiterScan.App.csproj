@@ -5,9 +5,16 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.*" />
-    <PackageReference Include="ScottPlot.WPF" Version="5.*" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.*" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="ScottPlot.WPF" Version="5.1.59" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.28" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Copy default config to output so DbInitializer can find it on first launch -->
+    <Content Include="..\..\config\default-config.json" CopyToOutputDirectory="PreserveNewest">
+      <Link>config\default-config.json</Link>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LoiterScan.Core\LoiterScan.Core.csproj" />

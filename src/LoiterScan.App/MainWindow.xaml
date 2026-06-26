@@ -1,9 +1,82 @@
 <Window x:Class="LoiterScan.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Loiter scan" Height="600" Width="900">
+        Title="Loiter Scan" Height="720" Width="1100"
+        Background="#F0F4F8">
     <Grid>
-        <TextBlock Text="Loiter scan — see docs/loiter-detection-spec.md"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="160"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Nav rail -->
+        <StackPanel Grid.Column="0" Background="#0D1B2A">
+            <TextBlock Text="LOITERSCAN"
+                       Foreground="#5B8DB8" FontSize="11" FontWeight="Bold"
+                       Margin="16 20 16 24"/>
+            <Button Content="Dashboard" Command="{Binding NavigateDashboardCommand}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ActivePage}" Value="Dashboard">
+                                <Setter Property="Background" Value="#1565C0"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="Results" Command="{Binding NavigateResultsCommand}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ActivePage}" Value="Results">
+                                <Setter Property="Background" Value="#1565C0"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="Catalog" Command="{Binding NavigateCatalogCommand}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ActivePage}" Value="Catalog">
+                                <Setter Property="Background" Value="#1565C0"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="Configuration" Command="{Binding NavigateConfigCommand}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ActivePage}" Value="Configuration">
+                                <Setter Property="Background" Value="#1565C0"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="Analytics" Command="{Binding NavigateAnalyticsCommand}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ActivePage}" Value="Analytics">
+                                <Setter Property="Background" Value="#1565C0"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </StackPanel>
+
+        <!-- Content area -->
+        <ContentControl Grid.Column="1" Content="{Binding ActiveViewModel}"/>
     </Grid>
 </Window>

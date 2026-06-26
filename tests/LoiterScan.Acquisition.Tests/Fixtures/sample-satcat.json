@@ -1,0 +1,26 @@
+[
+  {
+    "NORAD_CAT_ID": 25544,
+    "SATNAME": "ISS (ZARYA)",
+    "COUNTRY": "ISS",
+    "OBJECT_TYPE": "PAYLOAD",
+    "DECAY": null,
+    "OPS_STATUS_CODE": "+"
+  },
+  {
+    "NORAD_CAT_ID": 44235,
+    "SATNAME": "STARLINK-1",
+    "COUNTRY": "US",
+    "OBJECT_TYPE": "PAYLOAD",
+    "DECAY": null,
+    "OPS_STATUS_CODE": "+"
+  },
+  {
+    "NORAD_CAT_ID": 49445,
+    "SATNAME": "COSMOS 1408 DEB",
+    "COUNTRY": "CIS",
+    "OBJECT_TYPE": "DEBRIS",
+    "DECAY": null,
+    "OPS_STATUS_CODE": "D"
+  }
+]
