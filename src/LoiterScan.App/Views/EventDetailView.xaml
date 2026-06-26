@@ -53,12 +53,24 @@
                 </Border>
             </UniformGrid>
 
-            <!-- Plots -->
-            <TextBlock Text="RIC Relative-Motion Plot" FontWeight="SemiBold" Margin="0 0 0 4"/>
-            <sp:WpfPlot x:Name="RicPlot" Height="280" Margin="0 0 0 16"/>
+            <!-- Plots: RIC and Range vs Time side by side -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-            <TextBlock Text="Range vs Time" FontWeight="SemiBold" Margin="0 0 0 4"/>
-            <sp:WpfPlot x:Name="RangePlot" Height="220"/>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="RIC Relative-Motion Plot" FontWeight="SemiBold" Margin="0 0 0 4"/>
+                    <sp:WpfPlot x:Name="RicPlot" Height="300"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Range vs Time" FontWeight="SemiBold" Margin="0 0 0 4"/>
+                    <sp:WpfPlot x:Name="RangePlot" Height="300"/>
+                </StackPanel>
+            </Grid>
 
         </StackPanel>
     </ScrollViewer>

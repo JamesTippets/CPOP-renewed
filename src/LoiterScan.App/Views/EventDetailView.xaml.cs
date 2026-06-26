@@ -96,6 +96,7 @@ public partial class EventDetailView : UserControl
         RicPlot.Refresh();
 
         RangePlot.Plot.Clear();
+        RangePlot.Plot.Axes.Rules.Clear();
         if (_vm.HasData && _vm.RangeKm is not null)
         {
             RangePlot.Plot.Add.Scatter(_vm.RangeTimeMinutes!, _vm.RangeKm);
@@ -108,6 +109,15 @@ public partial class EventDetailView : UserControl
 
             var hThresh  = RangePlot.Plot.Add.HorizontalLine(_vm.ThresholdKm);
             hThresh.Color = ScottPlot.Colors.Orange;
+
+            RangePlot.Plot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.NumericFixedInterval(30);
+
+            double[] tMins = _vm.RangeTimeMinutes!;
+            var rangeLimits = new ScottPlot.AxisLimits(tMins[0], tMins[^1], 0, 10);
+            RangePlot.Plot.Axes.SetLimits(rangeLimits);
+            RangePlot.Plot.Axes.Rules.Add(
+                new ScottPlot.AxisRules.MaximumBoundary(
+                    RangePlot.Plot.Axes.Bottom, RangePlot.Plot.Axes.Left, rangeLimits));
 
             RangePlot.Plot.XLabel("Time (min from window start)");
             RangePlot.Plot.YLabel("Range (km)");
