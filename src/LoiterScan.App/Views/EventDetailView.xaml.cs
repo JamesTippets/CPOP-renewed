@@ -10,11 +10,21 @@ public partial class EventDetailView : UserControl
     private EventDetailViewModel? _vm;
     private bool _cesiumPageReady;
 
+    private ScottPlot.Plottables.Marker? _rangePlayhead;
+    private ScottPlot.Plottables.Marker? _ricPlayhead;
+
     public EventDetailView()
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
         Loaded += OnLoaded;
+
+        // After ScottPlot's own MouseWheel handler zooms the chart, mark the
+        // event handled so it stops bubbling to the outer ScrollViewer.
+        // PreviewMouseWheel would fire before ScottPlot and kill zoom; MouseWheel
+        // fires after, so ScottPlot zooms first and the page never scrolls.
+        RicPlot.MouseWheel   += (_, e) => e.Handled = true;
+        RangePlot.MouseWheel += (_, e) => e.Handled = true;
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -22,7 +32,8 @@ public partial class EventDetailView : UserControl
         try
         {
             await CesiumView.EnsureCoreWebView2Async();
-            CesiumView.CoreWebView2.NavigationCompleted += OnCesiumNavigationCompleted;
+            CesiumView.CoreWebView2.NavigationCompleted  += OnCesiumNavigationCompleted;
+            CesiumView.CoreWebView2.WebMessageReceived   += OnCesiumTick;
             CesiumView.NavigateToString(CesiumHtml());
         }
         catch { /* WebView2 runtime unavailable — viewer area stays blank */ }
@@ -107,7 +118,13 @@ public partial class EventDetailView : UserControl
 
             RicPlot.Plot.XLabel("Radial (km)");
             RicPlot.Plot.YLabel("In-track (km)");
+
+            _ricPlayhead = RicPlot.Plot.Add.Marker(_vm.RicR![0], _vm.RicI![0]);
+            _ricPlayhead.Color = ScottPlot.Colors.White;
+            _ricPlayhead.Size  = 11;
+            _ricPlayhead.Shape = ScottPlot.MarkerShape.OpenCircle;
         }
+        else { _ricPlayhead = null; }
         RicPlot.Refresh();
 
         // --- Range vs Time plot ---
@@ -143,11 +160,56 @@ public partial class EventDetailView : UserControl
 
             RangePlot.Plot.XLabel("Time (UTC)");
             RangePlot.Plot.YLabel("Range (km)");
+
+            int phIdx = (int)Math.Round((_vm.LoiterStartOA - oad[0]) * 1440.0);
+            phIdx = Math.Clamp(phIdx, 0, _vm.RangeKm.Length - 1);
+            _rangePlayhead = RangePlot.Plot.Add.Marker(
+                oad[phIdx], _vm.RangeKm[phIdx]);
+            _rangePlayhead.Color = ScottPlot.Colors.Black;
+            _rangePlayhead.Size  = 11;
+            _rangePlayhead.Shape = ScottPlot.MarkerShape.FilledCircle;
         }
+        else { _rangePlayhead = null; }
         RangePlot.Refresh();
 
         _ = InjectOrbitPathsAsync();
     }
+
+    private void OnCesiumTick(
+        object? sender,
+        Microsoft.Web.WebView2.Core.CoreWebView2WebMessageReceivedEventArgs e)
+    {
+        if (!double.TryParse(
+                e.TryGetWebMessageAsString(),
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out double oaDate)) return;
+        Dispatcher.Invoke(() => UpdatePlayhead(oaDate));
+    }
+
+    private void UpdatePlayhead(double oaDate)
+    {
+        if (_vm?.RangeTimeOADate is not { Length: > 0 } times) return;
+
+        oaDate = Math.Clamp(oaDate, times[0], times[^1]);
+
+        // Shared index: data is at 1-min steps from times[0].
+        int idx = (int)Math.Round((oaDate - times[0]) * 1440.0);
+        idx = Math.Clamp(idx, 0, times.Length - 1);
+
+        if (_rangePlayhead is not null && _vm.RangeKm is not null)
+        {
+            _rangePlayhead.Location = new ScottPlot.Coordinates(oaDate, _vm.RangeKm[idx]);
+            RangePlot.Refresh();
+        }
+
+        if (_ricPlayhead is not null && _vm.RicR is not null && _vm.RicI is not null)
+        {
+            _ricPlayhead.Location = new ScottPlot.Coordinates(_vm.RicR[idx], _vm.RicI[idx]);
+            RicPlot.Refresh();
+        }
+    }
+
 
     private async Task InjectOrbitPathsAsync()
     {
@@ -282,6 +344,20 @@ public partial class EventDetailView : UserControl
                         });
                     });
 
+                    // ── Chart playhead — post current OADate to WPF on each clock tick ───
+                    // Throttled to 200 ms wall time so the Dispatcher queue stays light.
+                    // OADate = JD − 2415018.5  (days since 1899-12-30 00:00 UTC)
+                    var _lastTickWall = 0;
+                    viewer.clock.onTick.addEventListener(function (clock) {
+                        var now = Date.now();
+                        if (now - _lastTickWall < 200) return;
+                        _lastTickWall = now;
+                        var jd = clock.currentTime.dayNumber
+                               + clock.currentTime.secondsOfDay / 86400.0;
+                        var oa = jd - 2415018.5;
+                        try { window.chrome.webview.postMessage(oa.toString()); } catch (_) {}
+                    });
+
                     // ── Orbit injection (called from C# once data is ready) ──────────────
                     window.addOrbitPaths = function (data) {
                         window._orbitData = data;
@@ -297,27 +373,46 @@ public partial class EventDetailView : UserControl
                         viewer.timeline.zoomTo(start, stop);
 
                         // Yellow CA tick overlaid on the timeline bar.
-                        // The timeline canvas fills its container linearly; a % left value
-                        // maps cleanly to clock time without needing pixel math.
+                        // Uses pixel positioning recomputed via ResizeObserver so the tick
+                        // stays accurate when the viewer is resized (CSS % can drift if
+                        // Cesium's internal timeline resize shifts the canvas bounds).
                         (function () {
                             var old = document.getElementById('ca-tl-marker');
-                            if (old) old.parentNode.removeChild(old);
+                            if (old) {
+                                if (window._caTickObs) {
+                                    window._caTickObs.disconnect();
+                                    window._caTickObs = null;
+                                }
+                                old.parentNode.removeChild(old);
+                            }
 
                             if (!data.caTimeIso) return;
                             var caJd   = Cesium.JulianDate.fromIso8601(data.caTimeIso);
                             var total  = Cesium.JulianDate.secondsDifference(stop, start);
                             var offset = Cesium.JulianDate.secondsDifference(caJd, start);
-                            var pct    = Math.max(0, Math.min(100, (offset / total) * 100));
+                            var frac   = Math.max(0, Math.min(1, offset / total));
 
-                            var tlEl = viewer.timeline.container;
+                            // Prefer the inner rendering div; fall back to the outer container.
+                            var tlEl = viewer.container.querySelector('.cesium-timeline-main')
+                                    || viewer.timeline.container;
 
                             var tick = document.createElement('div');
                             tick.id  = 'ca-tl-marker';
                             tick.style.cssText =
-                                'position:absolute;top:0;bottom:0;left:' + pct + '%;' +
+                                'position:absolute;top:0;bottom:0;' +
                                 'width:2px;background:rgba(255,230,0,0.9);' +
                                 'pointer-events:none;z-index:10;';
                             tlEl.appendChild(tick);
+
+                            function reposition() {
+                                tick.style.left = Math.round(frac * tlEl.offsetWidth) + 'px';
+                            }
+                            reposition();
+
+                            if (typeof ResizeObserver !== 'undefined') {
+                                window._caTickObs = new ResizeObserver(reposition);
+                                window._caTickObs.observe(tlEl);
+                            }
                         }());
                     };
 
