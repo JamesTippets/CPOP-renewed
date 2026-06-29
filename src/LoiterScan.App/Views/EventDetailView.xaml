@@ -1,7 +1,8 @@
 <UserControl x:Class="LoiterScan.App.Views.EventDetailView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:sp="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF">
+             xmlns:sp="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="16">
 
@@ -52,6 +53,11 @@
                     </StackPanel>
                 </Border>
             </UniformGrid>
+
+            <!-- Cesium 3D globe viewer -->
+            <Border CornerRadius="4" Margin="0 0 0 16" Background="#0d0d1a">
+                <wv2:WebView2 x:Name="CesiumView" Height="500"/>
+            </Border>
 
             <!-- Plots: RIC and Range vs Time side by side -->
             <Grid>
