@@ -1,8 +1,11 @@
+using System.Globalization;
+using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using LoiterScan.App.ViewModels;
+using Microsoft.Win32;
 
 namespace LoiterScan.App.Views;
 
@@ -196,10 +199,16 @@ public partial class EventDetailView : UserControl
         object? sender,
         Microsoft.Web.WebView2.Core.CoreWebView2WebMessageReceivedEventArgs e)
     {
+        var msg = e.TryGetWebMessageAsString();
+        if (msg == "export-czml")
+        {
+            Dispatcher.Invoke(ExportCzml);
+            return;
+        }
         if (!double.TryParse(
-                e.TryGetWebMessageAsString(),
-                System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture,
+                msg,
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
                 out double oaDate)) return;
         Dispatcher.Invoke(() => UpdatePlayhead(oaDate));
     }
@@ -320,6 +329,150 @@ public partial class EventDetailView : UserControl
             $"if(window.addOrbitPaths)window.addOrbitPaths({json});");
     }
 
+    // ── CZML export ─────────────────────────────────────────────────────────
+
+    private void ExportCzml()
+    {
+        if (_vm?.OrbitEcefA is null || _vm.OrbitEcefB is null) return;
+
+        var caUtc = string.IsNullOrEmpty(_vm.CaTimeIso)
+            ? DateTime.UtcNow
+            : DateTime.Parse(_vm.CaTimeIso, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+
+        var defaultName = $"{caUtc:yyyy-MM-dd HHmm} UTC Event {SanitizeFilename(_vm.SatLabelA)} vs {SanitizeFilename(_vm.SatLabelB)}";
+
+        var dialog = new SaveFileDialog
+        {
+            Title      = "Export CZML",
+            Filter     = "CZML files (*.czml)|*.czml|All files (*.*)|*.*",
+            DefaultExt = ".czml",
+            FileName   = defaultName,
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
+        File.WriteAllText(dialog.FileName, GenerateCzml(), new System.Text.UTF8Encoding(false));
+    }
+
+    private string GenerateCzml()
+    {
+        var vm = _vm!;
+        var packets = new List<object>
+        {
+            new {
+                id      = "document",
+                name    = $"{vm.SatLabelA} vs {vm.SatLabelB}",
+                version = "1.0",
+                clock   = new {
+                    interval    = $"{vm.ClockStartIso}/{vm.ClockStopIso}",
+                    currentTime = vm.ClockStartIso,
+                    multiplier  = 60,
+                    range       = "LOOP_STOP",
+                    step        = "SYSTEM_CLOCK_MULTIPLIER",
+                },
+            },
+            BuildSatPacket("satA", vm.SatLabelA, vm.ClockStartIso, vm.ClockStopIso,
+                vm.OrbitStartIsoA, vm.OrbitEcefA!, [0, 255, 255, 255]),
+            BuildSatPacket("satB", vm.SatLabelB, vm.ClockStartIso, vm.ClockStopIso,
+                vm.OrbitStartIsoB, vm.OrbitEcefB!, [255, 140, 0, 255]),
+        };
+
+        if (!string.IsNullOrEmpty(vm.CaTimeIso) && vm.SatALabelEcef.Length == 3)
+            packets.Add(BuildCaPacket(vm.CaTimeIso, vm.SatALabelEcef, vm.CaLabel));
+
+        return JsonSerializer.Serialize(packets, new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private static object BuildSatPacket(
+        string id, string name,
+        string availStart, string availStop,
+        string epochIso, double[] ecef,
+        int[] rgba)
+    {
+        int steps = ecef.Length / 3;
+        var cartesian = new double[steps * 4];
+        for (int i = 0; i < steps; i++)
+        {
+            cartesian[i * 4]     = i * 60.0;
+            cartesian[i * 4 + 1] = ecef[i * 3];
+            cartesian[i * 4 + 2] = ecef[i * 3 + 1];
+            cartesian[i * 4 + 3] = ecef[i * 3 + 2];
+        }
+
+        return new {
+            id,
+            name,
+            availability = $"{availStart}/{availStop}",
+            label = new {
+                text         = name,
+                font         = "13px sans-serif",
+                fillColor    = new { rgba },
+                outlineColor = new { rgba = new[] {0, 0, 0, 255} },
+                outlineWidth = 2,
+                style        = "FILL_AND_OUTLINE",
+                verticalOrigin = "BOTTOM",
+                pixelOffset  = new { cartesian2 = new[] {0, -12} },
+            },
+            point = new {
+                pixelSize    = 9,
+                color        = new { rgba },
+                outlineColor = new { rgba = new[] {0, 0, 0, 255} },
+                outlineWidth = 1,
+            },
+            path = new {
+                material = new {
+                    solidColor = new {
+                        color = new { rgba = new[] {rgba[0], rgba[1], rgba[2], 230} },
+                    },
+                },
+                width      = 2,
+                leadTime   = steps * 60,
+                trailTime  = steps * 60,
+                resolution = 30,
+            },
+            position = new {
+                epoch          = epochIso,
+                referenceFrame = "FIXED",
+                cartesian,
+            },
+        };
+    }
+
+    private static object BuildCaPacket(string caIso, double[] ecef, string label)
+    {
+        return new {
+            id   = "ca-marker",
+            name = "Closest Approach",
+            label = new {
+                text            = label,
+                font            = "11px sans-serif",
+                fillColor       = new { rgba = new[] {255, 230, 0, 255} },
+                outlineColor    = new { rgba = new[] {0, 0, 0, 255} },
+                outlineWidth    = 2,
+                style           = "FILL_AND_OUTLINE",
+                verticalOrigin  = "BOTTOM",
+                pixelOffset     = new { cartesian2 = new[] {0, -14} },
+                showBackground  = true,
+                backgroundColor = new { rgba = new[] {0, 0, 26, 140} },
+            },
+            point = new {
+                pixelSize    = 11,
+                color        = new { rgba = new[] {255, 230, 0, 255} },
+                outlineColor = new { rgba = new[] {0, 0, 0, 255} },
+                outlineWidth = 2,
+            },
+            position = new {
+                cartesian = ecef,
+            },
+        };
+    }
+
+    private static string SanitizeFilename(string name)
+    {
+        var invalid = Path.GetInvalidFileNameChars().ToHashSet();
+        return new string(name.Select(c => invalid.Contains(c) ? '_' : c).ToArray()).Trim();
+    }
+
     private static string CesiumHtml() => """
         <!DOCTYPE html>
         <html lang="en">
@@ -392,6 +545,23 @@ public partial class EventDetailView : UserControl
                         var home = bar.querySelector('.cesium-home-button');
                         if (home) bar.insertBefore(trackBtn, home);
                         else      bar.appendChild(trackBtn);
+                    }());
+
+                    // ── Export CZML button ────────────────────────────────────────────────
+                    var exportBtn = document.createElement('button');
+                    exportBtn.className = 'cesium-button cesium-toolbar-button';
+                    exportBtn.style.cssText = 'min-width:100px;font-size:11px;padding:0 6px;';
+                    exportBtn.textContent = 'Export CZML';
+                    exportBtn.title = 'Export current scene as a CZML file';
+                    exportBtn.onclick = function () {
+                        try { window.chrome.webview.postMessage('export-czml'); } catch (_) {}
+                    };
+                    (function () {
+                        var bar  = viewer.container.querySelector('.cesium-viewer-toolbar');
+                        if (!bar) return;
+                        var home = bar.querySelector('.cesium-home-button');
+                        if (home) bar.insertBefore(exportBtn, home);
+                        else      bar.appendChild(exportBtn);
                     }());
 
                     // ── ECEF / ECI frame toggle (upper-left overlay) ─────────────────────
