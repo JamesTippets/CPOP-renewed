@@ -34,7 +34,8 @@ public sealed record AcquisitionConfig(
     string Source,
     bool RefreshBeforeRun,
     string? Username = null,
-    string? Password = null);
+    string? Password = null,
+    string? FlatFilePath = null);
 
 /// <summary>Complete application configuration snapshot — stored per run for auditability (spec §6).</summary>
 public sealed record RunConfig(

@@ -43,6 +43,33 @@ public sealed class SpaceTrackCatalogSource
     private static async Task<string?> TryFetchSatcatAsync(HttpClient http, CancellationToken ct)
     {
         try { return await http.GetStringAsync(SatcatUrl, ct); }
-        catch (HttpRequestException) { return null; }
+        catch (Exception) { return null; }
+    }
+
+    /// <summary>
+    /// Fetches Space-Track SATCAT using fresh credentials.
+    /// Used as a fallback by other sources (e.g. flat-file) when CelesTrak SATCAT is unavailable.
+    /// Returns null on any failure.
+    /// </summary>
+    internal static async Task<string?> FetchSatcatWithCredentialsAsync(
+        string username, string password, CancellationToken ct)
+    {
+        try
+        {
+            var cookies = new CookieContainer();
+            using var handler = new HttpClientHandler { CookieContainer = cookies };
+            using var http    = new HttpClient(handler) { Timeout = TimeSpan.FromMinutes(5) };
+
+            var loginResp = await http.PostAsync(LoginUrl,
+                new FormUrlEncodedContent(
+                [
+                    new KeyValuePair<string, string>("identity", username),
+                    new KeyValuePair<string, string>("password", password),
+                ]), ct);
+            if (!loginResp.IsSuccessStatusCode) return null;
+
+            return await http.GetStringAsync(SatcatUrl, ct);
+        }
+        catch (Exception) { return null; }
     }
 }

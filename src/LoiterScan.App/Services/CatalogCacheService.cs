@@ -1,4 +1,5 @@
 using LoiterScan.Acquisition.CelesTrak;
+using LoiterScan.Acquisition.FlatFile;
 using LoiterScan.Acquisition.SpaceTrack;
 using LoiterScan.Core.Models;
 using LoiterScan.Data;
@@ -17,17 +18,23 @@ namespace LoiterScan.App.Services;
 public sealed class CatalogCacheService(
     CelesTrakCatalogSource     celestrak,
     SpaceTrackCatalogSource    spaceTrack,
+    FlatFileCatalogSource      flatFile,
     IDbContextFactory<LoiterScanDbContext> factory)
 {
     private const int RateLimitHours = 2;
 
     public async Task EnsureFreshAsync(AcquisitionConfig acq, CancellationToken ct)
     {
-        if (!await IsStaleAsync(ct))
+        if (!await IsStaleAsync(acq.Source, ct))
             return;
 
         IReadOnlyList<CatalogObject> objects;
-        if (acq.Source.Equals("space-track", StringComparison.OrdinalIgnoreCase))
+        if (acq.Source.Equals("flat-file", StringComparison.OrdinalIgnoreCase))
+        {
+            var path = acq.FlatFilePath ?? string.Empty;
+            objects = await flatFile.FetchCatalogAsync(path, acq.Username, acq.Password, ct);
+        }
+        else if (acq.Source.Equals("space-track", StringComparison.OrdinalIgnoreCase))
         {
             var user = acq.Username ?? string.Empty;
             var pass = acq.Password ?? string.Empty;
@@ -41,11 +48,21 @@ public sealed class CatalogCacheService(
         await UpsertAsync(objects, acq.Source, ct);
     }
 
-    private async Task<bool> IsStaleAsync(CancellationToken ct)
+    private async Task<bool> IsStaleAsync(string configuredSource, CancellationToken ct)
     {
         await using var db = factory.CreateDbContext();
         var lastAt = await db.CatalogObjects.MaxAsync(o => (DateTime?)o.IngestedAt, ct);
-        return lastAt is null || (DateTime.UtcNow - lastAt.Value).TotalHours >= RateLimitHours;
+        if (lastAt is null) return true;
+
+        // Source change always forces a refresh, regardless of age
+        var catalogSource = await db.CatalogObjects
+            .Select(o => (string?)o.Source)
+            .FirstOrDefaultAsync(ct);
+        if (catalogSource is not null &&
+            !catalogSource.Equals(configuredSource, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return (DateTime.UtcNow - lastAt.Value).TotalHours >= RateLimitHours;
     }
 
     private async Task UpsertAsync(IReadOnlyList<CatalogObject> objects, string source, CancellationToken ct)

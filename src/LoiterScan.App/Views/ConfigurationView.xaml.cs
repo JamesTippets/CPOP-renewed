@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using LoiterScan.App.ViewModels;
+using Microsoft.Win32;
 
 namespace LoiterScan.App.Views;
 
@@ -31,4 +32,15 @@ public partial class ConfigurationView : UserControl
 
     // Called when the VM changes the password programmatically (e.g. source switch).
     private void SyncPasswordBox(string password) => PasswordBox.Password = password;
+
+    private void BrowseFlatFile_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title  = "Select TLE catalog file",
+            Filter = "TLE files (*.tle;*.txt)|*.tle;*.txt|All files (*.*)|*.*",
+        };
+        if (dialog.ShowDialog() == true && DataContext is ConfigurationViewModel vm)
+            vm.FlatFilePath = dialog.FileName;
+    }
 }

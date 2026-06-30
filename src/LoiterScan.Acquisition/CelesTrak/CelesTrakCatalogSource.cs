@@ -38,7 +38,7 @@ public sealed class CelesTrakCatalogSource(HttpClient http) : ICatalogSource
         {
             return await http.GetStringAsync(SatcatUrl, ct);
         }
-        catch (HttpRequestException)
+        catch (Exception)
         {
             // SATCAT endpoint unavailable — proceed without owner/type metadata
             return null;

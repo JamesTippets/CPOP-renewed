@@ -2,18 +2,39 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <DockPanel Margin="16">
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0 0 0 8">
-            <TextBlock Text="Catalog" FontSize="16" FontWeight="Bold"
-                       VerticalAlignment="Center" Margin="0 0 16 0"/>
-            <TextBlock Text="{Binding TotalCount, StringFormat='{}{0} objects'}"
-                       Foreground="#555" VerticalAlignment="Center" Margin="0 0 16 0"/>
-            <TextBox Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
-                     Width="220" Padding="4 2" VerticalContentAlignment="Center"/>
-            <Button Content="Clear" Command="{Binding ClearFilterCommand}"
-                    Margin="4 0 0 0" Padding="8 3"/>
-            <ProgressBar IsIndeterminate="True" Width="80" Height="6" Margin="16 0 0 0"
-                         VerticalAlignment="Center"
-                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        <StackPanel DockPanel.Dock="Top" Margin="0 0 0 4">
+            <!-- Title row -->
+            <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
+                <TextBlock Text="Catalog" FontSize="16" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0 0 16 0"/>
+                <TextBlock Text="{Binding TotalCount, StringFormat='{}{0} objects'}"
+                           Foreground="#555" VerticalAlignment="Center" Margin="0 0 12 0"/>
+                <TextBox Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
+                         Width="220" Padding="4 2" VerticalContentAlignment="Center"/>
+                <Button Content="Clear" Command="{Binding ClearFilterCommand}"
+                        Margin="4 0 8 0" Padding="8 3"/>
+                <Button Content="Refresh" Command="{Binding RefreshCommand}"
+                        Padding="8 3"/>
+                <ProgressBar IsIndeterminate="True" Width="80" Height="6" Margin="16 0 0 0"
+                             VerticalAlignment="Center"
+                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            </StackPanel>
+            <!-- Metadata coverage row -->
+            <StackPanel Orientation="Horizontal" Margin="0 0 0 6">
+                <TextBlock Foreground="#555" FontSize="11">
+                    <Run Text="Owner: "/>
+                    <Run Text="{Binding OwnerCount}" FontWeight="SemiBold"/>
+                    <Run Text=" / "/>
+                    <Run Text="{Binding TotalCount}"/>
+                    <Run Text="    Type: "/>
+                    <Run Text="{Binding TypeCount}" FontWeight="SemiBold"/>
+                    <Run Text=" / "/>
+                    <Run Text="{Binding TotalCount}"/>
+                </TextBlock>
+                <TextBlock Foreground="#888" FontSize="11" Margin="16 0 0 0"
+                           Text="{Binding LastIngested, StringFormat='Last ingested: {0}'}"
+                           Visibility="{Binding LastIngested, Converter={StaticResource StringNotEmptyToVisibilityConverter}}"/>
+            </StackPanel>
         </StackPanel>
 
         <DataGrid ItemsSource="{Binding Objects}"

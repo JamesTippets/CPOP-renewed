@@ -37,7 +37,7 @@ public sealed class ConfigService(IDbContextFactory<LoiterScanDbContext> factory
                 ExcludedGroups:    groups,
                 ExcludedIds:       ids,
                 ExcludedPairs:     pairs),
-            Acquisition: new AcquisitionConfig(p.AcquisitionSource, p.RefreshBeforeRun, p.CredentialUsername, p.CredentialPassword));
+            Acquisition: new AcquisitionConfig(p.AcquisitionSource, p.RefreshBeforeRun, p.CredentialUsername, p.CredentialPassword, p.FlatFilePath));
     }
 
     public async Task<ConfigParamEntity> GetParamEntityAsync()

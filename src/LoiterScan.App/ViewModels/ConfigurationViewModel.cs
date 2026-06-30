@@ -14,7 +14,7 @@ public sealed partial class ConfigurationViewModel : ObservableObject
 {
     private readonly ConfigService _configSvc;
 
-    public static IReadOnlyList<string> DataSources { get; } = ["CelesTrak", "Space-Track"];
+    public static IReadOnlyList<string> DataSources { get; } = ["CelesTrak", "Space-Track", "Flat File"];
 
     // ── Cascade ───────────────────────────────────────────────────────────────
     [ObservableProperty] private int    _horizonDays;
@@ -119,24 +119,24 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     [ObservableProperty] private bool   _refreshBeforeRun;
     [ObservableProperty] private string _username = string.Empty;
     [ObservableProperty] private string _password = string.Empty;
-    [ObservableProperty] private bool   _credentialsVisible;
+    [ObservableProperty] private string _flatFilePath = string.Empty;
+    [ObservableProperty] private bool   _flatFilePathVisible;
 
-    /// <summary>Raised when the password changes programmatically (e.g. on source switch) so the view can sync the PasswordBox.</summary>
+    /// <summary>
+    /// Note shown under credentials when not using Space-Track as the GP source.
+    /// Credentials are always persisted and used for SATCAT enrichment regardless of source.
+    /// </summary>
+    public string SatcatNote => AcquisitionSource.Equals("Space-Track", StringComparison.OrdinalIgnoreCase)
+        ? string.Empty
+        : "These credentials are optional for SATCAT metadata (owner, object type) regardless of GP source.";
+
+    /// <summary>Raised when the password changes programmatically so the view can sync the PasswordBox.</summary>
     public event Action<string>? PasswordSync;
 
     partial void OnAcquisitionSourceChanged(string value)
     {
-        if (value.Equals("CelesTrak", StringComparison.OrdinalIgnoreCase))
-        {
-            Username           = string.Empty;
-            Password           = string.Empty;
-            CredentialsVisible = false;
-            PasswordSync?.Invoke(string.Empty);
-        }
-        else
-        {
-            CredentialsVisible = true;
-        }
+        FlatFilePathVisible = value.Equals("Flat File", StringComparison.OrdinalIgnoreCase);
+        OnPropertyChanged(nameof(SatcatNote));
     }
 
     // ── Exclusion lists (newline-delimited in the text boxes) ─────────────────
@@ -177,12 +177,17 @@ public sealed partial class ConfigurationViewModel : ObservableObject
         MaxEpochAgeDays = entity.MaxEpochAgeDays;
 
         // Map stored lower-case source id to display name
-        AcquisitionSource = entity.AcquisitionSource.Equals("space-track", StringComparison.OrdinalIgnoreCase)
-            ? "Space-Track" : "CelesTrak";
-        RefreshBeforeRun   = entity.RefreshBeforeRun;
-        Username           = entity.CredentialUsername ?? string.Empty;
-        Password           = entity.CredentialPassword ?? string.Empty;
-        CredentialsVisible = !AcquisitionSource.Equals("CelesTrak", StringComparison.OrdinalIgnoreCase);
+        AcquisitionSource = entity.AcquisitionSource switch
+        {
+            var s when s.Equals("space-track", StringComparison.OrdinalIgnoreCase) => "Space-Track",
+            var s when s.Equals("flat-file",   StringComparison.OrdinalIgnoreCase) => "Flat File",
+            _ => "CelesTrak",
+        };
+        RefreshBeforeRun    = entity.RefreshBeforeRun;
+        Username            = entity.CredentialUsername ?? string.Empty;
+        Password            = entity.CredentialPassword ?? string.Empty;
+        FlatFilePath        = entity.FlatFilePath ?? string.Empty;
+        FlatFilePathVisible = AcquisitionSource.Equals("Flat File", StringComparison.OrdinalIgnoreCase);
         PasswordSync?.Invoke(Password);
 
         ExcludedCountriesText = string.Join("\n", countries);
@@ -221,11 +226,16 @@ public sealed partial class ConfigurationViewModel : ObservableObject
             ExcludeGroupPairsOnly = ExcludeGroupPairsOnly,
             RegimeScope           = ComputeRegimeScopeString(),
             MaxEpochAgeDays    = MaxEpochAgeDays,
-            AcquisitionSource  = AcquisitionSource.Equals("Space-Track", StringComparison.OrdinalIgnoreCase)
-                                     ? "space-track" : "celestrak",
+            AcquisitionSource  = AcquisitionSource switch
+            {
+                var s when s.Equals("Space-Track", StringComparison.OrdinalIgnoreCase) => "space-track",
+                var s when s.Equals("Flat File",   StringComparison.OrdinalIgnoreCase) => "flat-file",
+                _ => "celestrak",
+            },
             RefreshBeforeRun   = RefreshBeforeRun,
-            CredentialUsername = string.IsNullOrEmpty(Username) ? null : Username,
-            CredentialPassword = string.IsNullOrEmpty(Password) ? null : Password,
+            CredentialUsername = string.IsNullOrWhiteSpace(Username)  ? null : Username.Trim(),
+            CredentialPassword = string.IsNullOrEmpty(Password)       ? null : Password,
+            FlatFilePath       = string.IsNullOrWhiteSpace(FlatFilePath) ? null : FlatFilePath.Trim(),
         };
 
         var countries = SplitLines(ExcludedCountriesText);
@@ -284,6 +294,12 @@ public sealed partial class ConfigurationViewModel : ObservableObject
             string.IsNullOrWhiteSpace(Username))
         {
             ValidationError = "Space-Track requires a username.";
+            return false;
+        }
+        if (AcquisitionSource.Equals("Flat File", StringComparison.OrdinalIgnoreCase) &&
+            string.IsNullOrWhiteSpace(FlatFilePath))
+        {
+            ValidationError = "Flat File source requires a catalog file path.";
             return false;
         }
         return true;

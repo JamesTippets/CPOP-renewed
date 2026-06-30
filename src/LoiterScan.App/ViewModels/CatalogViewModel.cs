@@ -17,8 +17,11 @@ public sealed partial class CatalogViewModel : ObservableObject
     private List<CatalogObjectEntity> _allObjects = [];
 
     [ObservableProperty] private int    _totalCount;
+    [ObservableProperty] private int    _ownerCount;
+    [ObservableProperty] private int    _typeCount;
     [ObservableProperty] private string _filterText = string.Empty;
     [ObservableProperty] private bool   _isLoading;
+    [ObservableProperty] private string _lastIngested = string.Empty;
 
     public ObservableCollection<CatalogObjectEntity> Objects { get; } = [];
 
@@ -34,7 +37,14 @@ public sealed partial class CatalogViewModel : ObservableObject
                 .Include(x => x.Groups)
                 .OrderBy(x => x.NoradId)
                 .ToListAsync();
-            TotalCount = _allObjects.Count;
+
+            TotalCount   = _allObjects.Count;
+            OwnerCount   = _allObjects.Count(o => !string.IsNullOrEmpty(o.Owner));
+            TypeCount    = _allObjects.Count(o => !string.IsNullOrEmpty(o.ObjectType));
+            LastIngested = _allObjects.Count > 0
+                ? _allObjects.Max(o => o.IngestedAt).ToString("yyyy-MM-dd HH:mm UTC")
+                : string.Empty;
+
             ApplyFilter();
         }
         finally
@@ -42,6 +52,9 @@ public sealed partial class CatalogViewModel : ObservableObject
             IsLoading = false;
         }
     }
+
+    [RelayCommand]
+    private async Task RefreshAsync() => await LoadAsync();
 
     partial void OnFilterTextChanged(string value) => ApplyFilter();
 

@@ -42,4 +42,5 @@ public sealed class ConfigParamEntity
     public bool    RefreshBeforeRun     { get; set; }
     public string? CredentialUsername   { get; set; }
     public string? CredentialPassword   { get; set; }
+    public string? FlatFilePath         { get; set; }
 }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using LoiterScan.App.ViewModels;
 
 namespace LoiterScan.App.Views;
@@ -25,6 +26,9 @@ public partial class EventDetailView : UserControl
         // fires after, so ScottPlot zooms first and the page never scrolls.
         RicPlot.MouseWheel   += (_, e) => e.Handled = true;
         RangePlot.MouseWheel += (_, e) => e.Handled = true;
+
+        RicPlot.MouseLeftButtonDown   += OnChartLeftClick;
+        RangePlot.MouseLeftButtonDown += OnChartLeftClick;
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -32,11 +36,24 @@ public partial class EventDetailView : UserControl
         try
         {
             await CesiumView.EnsureCoreWebView2Async();
+            CesiumView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = true;
             CesiumView.CoreWebView2.NavigationCompleted  += OnCesiumNavigationCompleted;
             CesiumView.CoreWebView2.WebMessageReceived   += OnCesiumTick;
             CesiumView.NavigateToString(CesiumHtml());
         }
-        catch { /* WebView2 runtime unavailable — viewer area stays blank */ }
+        catch (Exception ex)
+        {
+            // Show the error inside the panel instead of silently leaving it white.
+            try
+            {
+                CesiumView.NavigateToString(
+                    "<body style=\"background:#1a1a2e;color:#f88;font-family:monospace;padding:16px\">" +
+                    "WebView2 init failed: " +
+                    System.Net.WebUtility.HtmlEncode(ex.GetType().Name + ": " + ex.Message) +
+                    "</body>");
+            }
+            catch { }
+        }
     }
 
     private async void OnCesiumNavigationCompleted(
@@ -210,6 +227,66 @@ public partial class EventDetailView : UserControl
         }
     }
 
+
+    private void OnChartLeftClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_vm?.RangeTimeOADate is not { Length: > 0 } times ||
+            _vm.RicR is null || _vm.RangeKm is null) return;
+
+        int idx;
+        if (ReferenceEquals(sender, RicPlot))
+        {
+            var pos    = e.GetPosition(RicPlot);
+            var click  = RicPlot.Plot.GetCoordinates((float)pos.X, (float)pos.Y);
+            var limits = RicPlot.Plot.Axes.GetLimits();
+            double xs  = limits.HorizontalSpan, ys = limits.VerticalSpan;
+            idx = FindNearest(i => {
+                double dx = (_vm.RicR![i] - click.X) / xs;
+                double dy = (_vm.RicI![i] - click.Y) / ys;
+                return dx * dx + dy * dy;
+            }, times.Length);
+        }
+        else
+        {
+            var pos    = e.GetPosition(RangePlot);
+            var click  = RangePlot.Plot.GetCoordinates((float)pos.X, (float)pos.Y);
+            var limits = RangePlot.Plot.Axes.GetLimits();
+            double xs  = limits.HorizontalSpan, ys = limits.VerticalSpan;
+            idx = FindNearest(i => {
+                double dx = (times[i] - click.X) / xs;
+                double dy = (_vm.RangeKm![i] - click.Y) / ys;
+                return dx * dx + dy * dy;
+            }, times.Length);
+        }
+
+        ApplySelection(idx);
+    }
+
+    private static int FindNearest(Func<int, double> distSq, int count)
+    {
+        int best = 0;
+        double bestDist = double.MaxValue;
+        for (int i = 0; i < count; i++)
+        {
+            double d = distSq(i);
+            if (d < bestDist) { bestDist = d; best = i; }
+        }
+        return best;
+    }
+
+    private void ApplySelection(int idx)
+    {
+        if (_vm?.RangeTimeOADate is not { Length: > 0 } times) return;
+        _ = JumpCesiumAsync(times[idx]);
+    }
+
+    private async Task JumpCesiumAsync(double oaDate)
+    {
+        if (!_cesiumPageReady) return;
+        var iso = DateTime.SpecifyKind(DateTime.FromOADate(oaDate), DateTimeKind.Utc).ToString("O");
+        await CesiumView.CoreWebView2.ExecuteScriptAsync(
+            $"if(window.jumpToTime)window.jumpToTime('{iso}');");
+    }
 
     private async Task InjectOrbitPathsAsync()
     {
@@ -528,6 +605,12 @@ public partial class EventDetailView : UserControl
 
                         if (window._tracking && window._satAEntity)
                             viewer.trackedEntity = window._satAEntity;
+                    };
+
+                    // Pause playback and jump to a specific time (called from C# on chart click).
+                    window.jumpToTime = function (isoString) {
+                        viewer.clock.shouldAnimate = false;
+                        viewer.clock.currentTime   = Cesium.JulianDate.fromIso8601(isoString);
                     };
 
                 } catch (err) {

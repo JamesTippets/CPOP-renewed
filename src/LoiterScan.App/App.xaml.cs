@@ -2,6 +2,7 @@ using System.IO;
 using System.Net.Http;
 using System.Windows;
 using LoiterScan.Acquisition.CelesTrak;
+using LoiterScan.Acquisition.FlatFile;
 using LoiterScan.Acquisition.SpaceTrack;
 using LoiterScan.Analytics;
 using LoiterScan.App.Services;
@@ -35,6 +36,7 @@ public partial class App : Application
         // Live sources — created once; credentials are passed per-call for SpaceTrack
         sc.AddSingleton(_ => new CelesTrakCatalogSource(new HttpClient { Timeout = TimeSpan.FromMinutes(2) }));
         sc.AddSingleton<SpaceTrackCatalogSource>();
+        sc.AddSingleton(_ => new FlatFileCatalogSource(new HttpClient { Timeout = TimeSpan.FromMinutes(2) }));
 
         // The pipeline reads from the local DB cache (populated by CatalogCacheService)
         sc.AddSingleton<DbCatalogSource>();

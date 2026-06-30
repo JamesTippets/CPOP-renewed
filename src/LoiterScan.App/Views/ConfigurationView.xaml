@@ -140,19 +140,36 @@
                                       Padding="4 2"/>
                         </StackPanel>
 
-                        <!-- Credentials — visible only for sources that require auth -->
-                        <StackPanel Visibility="{Binding CredentialsVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <!-- Space-Track credentials: required when Space-Track is the GP source;
+                             optional for other sources (used for SATCAT metadata enrichment) -->
+                        <StackPanel Margin="0 0 0 4">
                             <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
-                                <TextBlock Text="Username:" VerticalAlignment="Center" Width="120"/>
+                                <TextBlock Text="Space-Track Username:" VerticalAlignment="Center" Width="140"/>
                                 <TextBox x:Name="UsernameBox"
                                          Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
                                          Width="200" Padding="4 2"/>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
-                                <TextBlock Text="Password:" VerticalAlignment="Center" Width="120"/>
+                            <StackPanel Orientation="Horizontal" Margin="0 0 0 4">
+                                <TextBlock Text="Space-Track Password:" VerticalAlignment="Center" Width="140"/>
                                 <PasswordBox x:Name="PasswordBox"
                                              Width="200" Padding="4 2"
                                              PasswordChanged="PasswordBox_PasswordChanged"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding SatcatNote}" Foreground="#777" FontStyle="Italic"
+                                       FontSize="11" Margin="140 0 0 8" TextWrapping="Wrap" MaxWidth="290"
+                                       Visibility="{Binding SatcatNote, Converter={StaticResource StringNotEmptyToVisibilityConverter}}"/>
+                        </StackPanel>
+
+                        <!-- File path — visible only for the Flat File source -->
+                        <StackPanel Margin="0 0 0 8"
+                                    Visibility="{Binding FlatFilePathVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Catalog file:" VerticalAlignment="Center" Width="120"/>
+                                <TextBox Text="{Binding FlatFilePath, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="200" Padding="4 2"/>
+                                <Button Content="Browse..."
+                                        Click="BrowseFlatFile_Click"
+                                        Padding="8 2" Margin="4 0 0 0"/>
                             </StackPanel>
                         </StackPanel>
 
