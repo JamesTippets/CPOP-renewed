@@ -28,6 +28,9 @@ public sealed partial class EventDetailViewModel : ObservableObject
     [ObservableProperty] private string _objectATle   = "—";
     [ObservableProperty] private string _objectBTle   = "—";
     [ObservableProperty] private double _minRangeKm;
+    [ObservableProperty] private double _minRicR;
+    [ObservableProperty] private double _minRicI;
+    [ObservableProperty] private double _minRicC;
     [ObservableProperty] private string _closeApproach = "—";
     [ObservableProperty] private double _durationMinutes;
     [ObservableProperty] private double _confidence;
@@ -75,6 +78,7 @@ public sealed partial class EventDetailViewModel : ObservableObject
 
     private MeanElements? _elemA;
     private MeanElements? _elemB;
+    private double _caRicR, _caRicI, _caRicC;
 
     public EventDetailViewModel(IDbContextFactory<LoiterScanDbContext> factory, IPropagator propagator)
     {
@@ -96,6 +100,7 @@ public sealed partial class EventDetailViewModel : ObservableObject
         SatLabelA = SatLabelB = string.Empty;
         OrbitStartIsoA = OrbitStartIsoB = ClockStartIso = ClockStopIso = CaTimeIso = string.Empty;
         ObjectAType = ObjectBType = ObjectASize = ObjectBSize = ObjectATle = ObjectBTle = "—";
+        MinRicR = MinRicI = MinRicC = 0;
 
         await using var db = _factory.CreateDbContext();
         var ev = await db.LoiteringEvents.FindAsync(eventId);
@@ -127,11 +132,14 @@ public sealed partial class EventDetailViewModel : ObservableObject
             return;
         }
 
-        _elemA = EntityToElements(catA);
-        _elemB = EntityToElements(catB);
+        _elemA = catA.ToMeanElements();
+        _elemB = catB.ToMeanElements();
 
         await Task.Run(() => ComputePlotData(ev));
 
+        MinRicR = _caRicR;
+        MinRicI = _caRicI;
+        MinRicC = _caRicC;
         HasData = true;
         PlotsReady?.Invoke(this, EventArgs.Empty);
     }
@@ -174,6 +182,9 @@ public sealed partial class EventDetailViewModel : ObservableObject
         LoiterEndOA     = ev.LoiterEndUtc.ToOADate();
 
         int caIdx = Math.Clamp((int)Math.Round((ev.CloseApproachUtc - t0).TotalMinutes), 0, steps - 1);
+        _caRicR = ricR[caIdx];
+        _caRicI = ricI[caIdx];
+        _caRicC = ricC[caIdx];
         RicLabelPoints = [
             (ricR[0],          ricI[0],          t0),
             (ricR[caIdx],      ricI[caIdx],      t0 + TimeSpan.FromMinutes(caIdx)),
@@ -204,36 +215,8 @@ public sealed partial class EventDetailViewModel : ObservableObject
         CaTimeIso = UtcIso(ev.CloseApproachUtc);
     }
 
-    // Decomposes relative position into Radial / In-track / Cross-track (RIC) frame.
     private static (double R, double I, double C) EciToRic(OrbitState primary, OrbitState secondary)
-    {
-        // Radial unit vector (along primary position)
-        double rx = primary.X, ry = primary.Y, rz = primary.Z;
-        double rMag = Math.Sqrt(rx * rx + ry * ry + rz * rz);
-        rx /= rMag; ry /= rMag; rz /= rMag;
-
-        // Cross-track unit vector (orbit normal h = r × v)
-        double hx = primary.Y * primary.Vz - primary.Z * primary.Vy;
-        double hy = primary.Z * primary.Vx - primary.X * primary.Vz;
-        double hz = primary.X * primary.Vy - primary.Y * primary.Vx;
-        double hMag = Math.Sqrt(hx * hx + hy * hy + hz * hz);
-        hx /= hMag; hy /= hMag; hz /= hMag;
-
-        // In-track unit vector (C × R, completing right-hand system)
-        double ix = hy * rz - hz * ry;
-        double iy = hz * rx - hx * rz;
-        double iz = hx * ry - hy * rx;
-
-        // Relative position
-        double dx = secondary.X - primary.X;
-        double dy = secondary.Y - primary.Y;
-        double dz = secondary.Z - primary.Z;
-
-        return (
-            R: dx * rx + dy * ry + dz * rz,
-            I: dx * ix + dy * iy + dz * iz,
-            C: dx * hx + dy * hy + dz * hz);
-    }
+        => RicFrame.EciToRic(primary, secondary);
 
     private static string FormatRegime(string? regime) =>
         regime is null or "Unknown" ? "—" : regime.ToUpperInvariant();
@@ -275,16 +258,6 @@ public sealed partial class EventDetailViewModel : ObservableObject
         char expSign = exp >= 0 ? '+' : '-';
         return $"{sign}{mant:D5}{expSign}{Math.Abs(exp)}";
     }
-
-    private static MeanElements EntityToElements(CatalogObjectEntity c) => new(
-        MeanMotionRevPerDay: c.MeanMotionRevPerDay,
-        Eccentricity:        c.Eccentricity,
-        InclinationDeg:      c.InclinationDeg,
-        RaanDeg:             c.RaanDeg,
-        ArgPerigeeDeg:       c.ArgPerigeeDeg,
-        MeanAnomalyDeg:      c.MeanAnomalyDeg,
-        BStar:               c.BStar,
-        EpochUtc:            c.EpochUtc);
 
     // Propagates over [windowStart, windowEnd] at 1-min intervals (capped at 1500 steps).
     // Single pass produces both ECEF (GMST-rotated) and raw ECI (TEME) positions in metres,

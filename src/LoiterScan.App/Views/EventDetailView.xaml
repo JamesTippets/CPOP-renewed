@@ -99,10 +99,35 @@
             <!-- Metric cards -->
             <UniformGrid Columns="3" Margin="0 0 0 16">
                 <Border Background="#F5F5F5" CornerRadius="4" Padding="10" Margin="0 0 4 0">
-                    <StackPanel>
-                        <TextBlock Text="Min Range" Foreground="#555" FontSize="11"/>
-                        <TextBlock Text="{Binding MinRangeKm, StringFormat='{}{0:F2} km'}" FontSize="18" FontWeight="Bold"/>
-                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0 0 12 0">
+                            <TextBlock Text="Min Distance" Foreground="#555" FontSize="11"/>
+                            <TextBlock Text="{Binding MinRangeKm, StringFormat='{}{0:F2} km'}" FontSize="18" FontWeight="Bold"/>
+                        </StackPanel>
+                        <Grid Grid.Column="1" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="R" Foreground="#777" FontSize="9"/>
+                                <TextBlock Text="{Binding MinRicR, StringFormat='{}{0:F2} km'}" FontSize="10"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="I" Foreground="#777" FontSize="9"/>
+                                <TextBlock Text="{Binding MinRicI, StringFormat='{}{0:F2} km'}" FontSize="10"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="C" Foreground="#777" FontSize="9"/>
+                                <TextBlock Text="{Binding MinRicC, StringFormat='{}{0:F2} km'}" FontSize="10"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
                 </Border>
                 <Border Background="#F5F5F5" CornerRadius="4" Padding="10" Margin="4 0 4 0">
                     <StackPanel>
@@ -123,7 +148,7 @@
                 <wv2:WebView2 x:Name="CesiumView" Height="500"/>
             </Border>
 
-            <!-- Plots: RIC and Range vs Time side by side -->
+            <!-- Plots: RIC and Distance vs Time side by side -->
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -137,7 +162,7 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2">
-                    <TextBlock Text="Range vs Time" FontWeight="SemiBold" Margin="0 0 0 4"/>
+                    <TextBlock Text="Distance vs Time" FontWeight="SemiBold" Margin="0 0 0 4"/>
                     <sp:WpfPlot x:Name="RangePlot" Height="300"/>
                 </StackPanel>
             </Grid>

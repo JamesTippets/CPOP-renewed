@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LoiterScan.Analytics;
+using LoiterScan.Core.Abstractions;
 using LoiterScan.Core.Models;
 using LoiterScan.Data;
 using LoiterScan.Data.Entities;
@@ -10,7 +11,7 @@ namespace LoiterScan.App.Services;
 /// <summary>
 /// Persists run records and loitering events; loads run history for the UI and analytics.
 /// </summary>
-public sealed class RunService(IDbContextFactory<LoiterScanDbContext> factory)
+public sealed class RunService(IDbContextFactory<LoiterScanDbContext> factory, IPropagator propagator)
 {
     private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = false };
 
@@ -52,6 +53,9 @@ public sealed class RunService(IDbContextFactory<LoiterScanDbContext> factory)
                 NameB           = ev.NameB,
                 PairIndex       = ev.PairIndex > 0 ? ev.PairIndex : (int?)null,
                 MinRangeKm      = ev.MinRangeKm,
+                CaRicR          = ev.CaRicR,
+                CaRicI          = ev.CaRicI,
+                CaRicC          = ev.CaRicC,
                 CloseApproachUtc = ev.CloseApproachUtc,
                 LoiterStartUtc  = ev.LoiterStartUtc,
                 LoiterEndUtc    = ev.LoiterEndUtc,
@@ -105,6 +109,33 @@ public sealed class RunService(IDbContextFactory<LoiterScanDbContext> factory)
                 if (ev.NameA is null && nameMap.TryGetValue(ev.NoradIdA, out var nA)) ev.NameA = nA;
                 if (ev.NameB is null && nameMap.TryGetValue(ev.NoradIdB, out var nB)) ev.NameB = nB;
             }
+        }
+
+        // Back-fill RIC-at-close-approach for events stored before this was computed.
+        var needsRic = evs.Where(e => e.CaRicR == 0 && e.CaRicI == 0 && e.CaRicC == 0).ToList();
+        if (needsRic.Count > 0)
+        {
+            var ricIds = needsRic.SelectMany(e => new[] { e.NoradIdA, e.NoradIdB }).Distinct().ToList();
+            var catMap = await db.CatalogObjects
+                .Where(o => ricIds.Contains(o.NoradId))
+                .ToDictionaryAsync(o => o.NoradId);
+
+            bool anyRic = false;
+            foreach (var ev in needsRic)
+            {
+                if (!catMap.TryGetValue(ev.NoradIdA, out var catA) ||
+                    !catMap.TryGetValue(ev.NoradIdB, out var catB)) continue;
+
+                if (!propagator.TryPropagate(catA.ToMeanElements(), ev.CloseApproachUtc, out var sA) ||
+                    !propagator.TryPropagate(catB.ToMeanElements(), ev.CloseApproachUtc, out var sB)) continue;
+
+                var (r, i, c) = RicFrame.EciToRic(sA, sB);
+                ev.CaRicR = r;
+                ev.CaRicI = i;
+                ev.CaRicC = c;
+                anyRic = true;
+            }
+            if (anyRic) await db.SaveChangesAsync();
         }
 
         return evs;

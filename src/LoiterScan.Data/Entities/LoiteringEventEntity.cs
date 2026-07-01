@@ -31,6 +31,9 @@ public sealed class LoiteringEventEntity
 
     // Close-approach details
     public double   MinRangeKm       { get; set; }
+    public double   CaRicR           { get; set; }
+    public double   CaRicI           { get; set; }
+    public double   CaRicC           { get; set; }
     public DateTime CloseApproachUtc { get; set; }
     public DateTime LoiterStartUtc   { get; set; }
     public DateTime LoiterEndUtc     { get; set; }

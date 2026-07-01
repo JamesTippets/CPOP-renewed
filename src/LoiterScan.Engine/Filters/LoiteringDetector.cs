@@ -1,6 +1,7 @@
 using LoiterScan.Core.Abstractions;
 using LoiterScan.Core.Models;
 using LoiterScan.Engine.Internal;
+using static LoiterScan.Core.Models.RicFrame;
 
 namespace LoiterScan.Engine.Filters;
 
@@ -56,11 +57,12 @@ internal static class LoiteringDetector
         int maxExcursionMinutes)
     {
         // State machine
-        DateTime? spanStart    = null;
-        DateTime? lastInRange  = null;
-        int       excursionLen = 0;
-        double    minRange     = double.MaxValue;
-        DateTime? closeApproachT = null;
+        DateTime?    spanStart    = null;
+        DateTime?    lastInRange  = null;
+        int          excursionLen = 0;
+        double       minRange     = double.MaxValue;
+        DateTime?    closeApproachT = null;
+        OrbitState   caStateA = default, caStateB = default;
 
         var t = window.Start;
         while (t <= window.End)
@@ -81,7 +83,7 @@ internal static class LoiteringDetector
                 if (spanStart == null) spanStart = t;
                 lastInRange  = t;
                 excursionLen = 0;
-                if (dist < minRange) { minRange = dist; closeApproachT = t; }
+                if (dist < minRange) { minRange = dist; closeApproachT = t; caStateA = sa; caStateB = sb; }
             }
             else if (spanStart != null)
             {
@@ -94,11 +96,11 @@ internal static class LoiteringDetector
                         double durMin = (lastInRange.Value - spanStart.Value).TotalMinutes + step.TotalMinutes;
                         if (durMin >= minDurationMinutes)
                             yield return BuildEvent(pair, spanStart.Value, lastInRange.Value,
-                                                    durMin, minRange, closeApproachT!.Value);
+                                                    durMin, minRange, closeApproachT!.Value, caStateA, caStateB);
                     }
                     // Reset span
                     spanStart = null; lastInRange = null; excursionLen = 0;
-                    minRange = double.MaxValue; closeApproachT = null;
+                    minRange = double.MaxValue; closeApproachT = null; caStateA = default; caStateB = default;
                 }
             }
 
@@ -111,17 +113,18 @@ internal static class LoiteringDetector
             double durMin = (lastInRange.Value - spanStart.Value).TotalMinutes + step.TotalMinutes;
             if (durMin >= minDurationMinutes)
                 yield return BuildEvent(pair, spanStart.Value, lastInRange.Value,
-                                        durMin, minRange, closeApproachT!.Value);
+                                        durMin, minRange, closeApproachT!.Value, caStateA, caStateB);
         }
     }
 
     private static LoiteringEvent BuildEvent(
         CandidatePair pair, DateTime start, DateTime end,
-        double durationMinutes, double minRangeKm, DateTime closeApproach)
+        double durationMinutes, double minRangeKm, DateTime closeApproach,
+        OrbitState caStateA, OrbitState caStateB)
     {
-        // Confidence proxy: mean epoch age (days); fresher = higher confidence
         double epochAgeMean = (pair.A.EpochAgeDays + pair.B.EpochAgeDays) / 2;
         double confidence   = Math.Max(0, 1 - epochAgeMean / 30.0);
+        var (ricR, ricI, ricC) = RicFrame.EciToRic(caStateA, caStateB);
 
         return new LoiteringEvent(
             Pair:             new PairKey(pair.A.NoradId, pair.B.NoradId),
@@ -131,6 +134,9 @@ internal static class LoiteringDetector
             LoiterEndUtc:     end,
             DurationMinutes:  durationMinutes,
             Confidence:       confidence,
+            CaRicR:           ricR,
+            CaRicI:           ricI,
+            CaRicC:           ricC,
             NameA:            pair.A.Name,
             NameB:            pair.B.Name);
     }

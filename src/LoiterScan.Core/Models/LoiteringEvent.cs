@@ -9,6 +9,9 @@ public sealed record LoiteringEvent(
     DateTime LoiterEndUtc,
     double DurationMinutes,
     double Confidence,
+    double CaRicR = 0,
+    double CaRicI = 0,
+    double CaRicC = 0,
     string? NameA = null,
     string? NameB = null,
     int PairIndex = 0);

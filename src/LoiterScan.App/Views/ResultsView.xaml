@@ -31,10 +31,13 @@
                 <DataGridTextColumn Header="Pair Key"         Binding="{Binding PairKeyDisplay}" Width="110"/>
                 <DataGridTextColumn Header="Sat A"            Binding="{Binding SatADisplay}" Width="180"/>
                 <DataGridTextColumn Header="Sat B"            Binding="{Binding SatBDisplay}" Width="180"/>
-                <DataGridTextColumn Header="Min Range (km)"   Binding="{Binding MinRangeKm,  StringFormat='F2'}" Width="110"/>
+                <DataGridTextColumn Header="Duration (min)"    Binding="{Binding DurationMinutes, StringFormat='F0'}" Width="110"/>
+                <DataGridTextColumn Header="Min Distance (km)" Binding="{Binding MinRangeKm,  StringFormat='F2'}" Width="115"/>
+                <DataGridTextColumn Header="R (km)"            Binding="{Binding CaRicR,       StringFormat='F2'}" Width="75"/>
+                <DataGridTextColumn Header="I (km)"            Binding="{Binding CaRicI,       StringFormat='F2'}" Width="75"/>
+                <DataGridTextColumn Header="C (km)"            Binding="{Binding CaRicC,       StringFormat='F2'}" Width="75"/>
                 <DataGridTextColumn Header="Close Approach (UTC)" Binding="{Binding CloseApproachUtc, StringFormat='yyyy-MM-dd HH:mm'}" Width="160"/>
                 <DataGridTextColumn Header="Loiter Start (UTC)"   Binding="{Binding LoiterStartUtc,  StringFormat='yyyy-MM-dd HH:mm'}" Width="155"/>
-                <DataGridTextColumn Header="Duration (min)"   Binding="{Binding DurationMinutes, StringFormat='F0'}" Width="110"/>
                 <DataGridTextColumn Header="Confidence"       Binding="{Binding Confidence,  StringFormat='P0'}" Width="90"/>
             </DataGrid.Columns>
         </DataGrid>

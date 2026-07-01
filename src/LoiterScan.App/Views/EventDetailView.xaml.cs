@@ -189,7 +189,7 @@ public partial class EventDetailView : UserControl
                     RangePlot.Plot.Axes.Bottom, RangePlot.Plot.Axes.Left, rangeLimits));
 
             RangePlot.Plot.XLabel("Time (UTC)");
-            RangePlot.Plot.YLabel("Range (km)");
+            RangePlot.Plot.YLabel("Distance (km)");
 
             int phIdx = (int)Math.Round((_vm.LoiterStartOA - oad[0]) * 1440.0);
             phIdx = Math.Clamp(phIdx, 0, _vm.RangeKm.Length - 1);
