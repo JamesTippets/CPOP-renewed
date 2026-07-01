@@ -529,6 +529,7 @@ public partial class EventDetailView : UserControl
                     window._viewer     = viewer;
                     window._tracking   = false;
                     window._frame      = 'ECEF';
+                    window._is2D       = false;
                     window._satAEntity = null;
                     window._orbitData  = null;
 
@@ -598,6 +599,55 @@ public partial class EventDetailView : UserControl
                             if (window._orbitData) window._updateDisplay(window._orbitData);
                             if (window._tracking && window._satAEntity)
                                 viewer.trackedEntity = window._satAEntity;
+                        });
+                    });
+
+                    // ── 3D / 2D projection toggle (below frame overlay) ──────────────────
+                    var projDiv = document.createElement('div');
+                    projDiv.style.cssText =
+                        'position:absolute;top:46px;left:8px;z-index:1000;' +
+                        'background:rgba(30,30,48,0.88);border-radius:4px;' +
+                        'padding:5px 10px;display:flex;gap:10px;align-items:center;' +
+                        'font-family:Roboto,sans-serif;font-size:12px;color:#ccc;' +
+                        'box-shadow:0 1px 4px rgba(0,0,0,0.6);user-select:none;';
+                    projDiv.innerHTML =
+                        'Projection:&nbsp;' +
+                        '<label style="cursor:pointer;color:#eee">' +
+                            '<input type="radio" name="cesProj" value="3D" checked>&nbsp;3D' +
+                        '</label>' +
+                        '<label style="cursor:pointer;color:#eee">' +
+                            '<input type="radio" name="cesProj" value="2D">&nbsp;2D (Mercator)' +
+                        '</label>';
+                    viewer.container.appendChild(projDiv);
+                    [].forEach.call(projDiv.querySelectorAll('input[name=cesProj]'), function (r) {
+                        r.addEventListener('change', function () {
+                            if (!r.checked) return;
+                            if (r.value === '2D') {
+                                viewer.trackedEntity = undefined;
+                                window._tracking = false;
+                                trackBtn.textContent = 'Not following';
+                                window._is2D = true;
+                                var removeMorphListener = viewer.scene.morphComplete.addEventListener(function () {
+                                    removeMorphListener();
+                                    // Cesium recalculates maximumZoomDistance during scene-mode init;
+                                    // defer one render frame to override it after that calculation runs.
+                                    var removeRender = viewer.scene.postRender.addEventListener(function () {
+                                        removeRender();
+                                        viewer.scene.screenSpaceCameraController.maximumZoomDistance = Infinity;
+                                        // Rebuild entities using ECEF now that _is2D is true.
+                                        if (window._orbitData) window._updateDisplay(window._orbitData);
+                                        viewer.camera.setView({
+                                            destination: Cesium.Rectangle.fromDegrees(-180, -85.05, 180, 85.05)
+                                        });
+                                    });
+                                });
+                                viewer.scene.morphTo2D(0);
+                            } else {
+                                window._is2D = false;
+                                // Rebuild entities restoring the original frame mode.
+                                if (window._orbitData) window._updateDisplay(window._orbitData);
+                                viewer.scene.morphTo3D(0);
+                            }
                         });
                     });
 
@@ -673,21 +723,35 @@ public partial class EventDetailView : UserControl
                         }());
                     };
 
-                    // ── Internal display update (re-runs on frame toggle) ─────────────────
+                    // ── Internal display update (re-runs on frame/projection toggle) ────────
                     window._updateDisplay = function (data) {
                         viewer.entities.removeAll();
                         window._satAEntity = null;
                         window._satBEntity = null;
 
-                        var eci = (window._frame === 'ECI');
+                        var isEci = (window._frame === 'ECI');
+                        // 3D ECI: use Cesium INERTIAL reference frame — Earth rotates under the arc.
+                        var eci3d = isEci && !window._is2D;
+                        // 2D ECI: project ECI (x,y,z) to lon/lat by treating right-ascension as
+                        // longitude and declination as latitude, then use FIXED frame so the arc
+                        // stays stationary on the flat map as the clock advances.
+                        var eci2d = isEci && window._is2D;
+
+                        // Converts an ECI position (metres) to a geographic Cartesian3 (FIXED)
+                        // by mapping RA→longitude and declination→latitude without Earth rotation.
+                        function eciToGeo(x, y, z) {
+                            var r   = Math.sqrt(x * x + y * y + z * z);
+                            var lon = Math.atan2(y, x);
+                            var lat = Math.asin(z / r);
+                            var alt = r - 6378137.0;
+                            return Cesium.Cartesian3.fromRadians(lon, lat, alt);
+                        }
 
                         // Builds a SampledPositionProperty from a flat [x,y,z,…] metre array.
-                        // INERTIAL ref-frame in ECI mode: Cesium handles the rotation to ECEF
-                        // at render time, giving a correct inertial-frame orbit arc.
                         function buildSampled(flat, startIso) {
                             var sp = new Cesium.SampledPositionProperty(
-                                eci ? Cesium.ReferenceFrame.INERTIAL
-                                    : Cesium.ReferenceFrame.FIXED);
+                                eci3d ? Cesium.ReferenceFrame.INERTIAL
+                                      : Cesium.ReferenceFrame.FIXED);
                             sp.forwardExtrapolationType  = Cesium.ExtrapolationType.HOLD;
                             sp.backwardExtrapolationType = Cesium.ExtrapolationType.HOLD;
                             sp.setInterpolationOptions({
@@ -699,8 +763,10 @@ public partial class EventDetailView : UserControl
                             for (var i = 0; i < n; i++) {
                                 var jd  = Cesium.JulianDate.addSeconds(
                                     epoch, i * 60, new Cesium.JulianDate());
-                                var pos = new Cesium.Cartesian3(
-                                    flat[i * 3], flat[i * 3 + 1], flat[i * 3 + 2]);
+                                var pos = eci2d
+                                    ? eciToGeo(flat[i * 3], flat[i * 3 + 1], flat[i * 3 + 2])
+                                    : new Cesium.Cartesian3(
+                                        flat[i * 3], flat[i * 3 + 1], flat[i * 3 + 2]);
                                 sp.addSample(jd, pos);
                             }
                             return sp;
@@ -716,7 +782,7 @@ public partial class EventDetailView : UserControl
                         //   • HOLD extrapolation means positions outside the sample window
                         //     collapse to the arc endpoints (zero-length stub, not a spike).
                         function addSat(satData, color) {
-                            var flat    = eci ? satData.eciPositions : satData.positions;
+                            var flat    = (eci3d || eci2d) ? satData.eciPositions : satData.positions;
                             var arcSecs = (flat.length / 3 - 1) * 60;
 
                             return viewer.entities.add({
@@ -748,16 +814,24 @@ public partial class EventDetailView : UserControl
                         }
 
                         // Closest-approach marker at Sat A's CA position.
-                        // Uses ConstantPositionProperty(INERTIAL) in ECI mode so the marker
-                        // stays fixed in the inertial frame while Earth rotates.
                         function addCaMarker(d) {
-                            var pos = eci ? d.a.labelPosEci : d.a.labelPos;
-                            var c3  = new Cesium.Cartesian3(pos[0], pos[1], pos[2]);
+                            var rawPos, c3, position;
+                            if (eci3d) {
+                                rawPos   = d.a.labelPosEci;
+                                c3       = new Cesium.Cartesian3(rawPos[0], rawPos[1], rawPos[2]);
+                                position = new Cesium.ConstantPositionProperty(
+                                    c3, Cesium.ReferenceFrame.INERTIAL);
+                            } else if (eci2d) {
+                                rawPos   = d.a.labelPosEci;
+                                c3       = eciToGeo(rawPos[0], rawPos[1], rawPos[2]);
+                                position = c3;
+                            } else {
+                                rawPos   = d.a.labelPos;
+                                c3       = new Cesium.Cartesian3(rawPos[0], rawPos[1], rawPos[2]);
+                                position = c3;
+                            }
                             viewer.entities.add({
-                                position: eci
-                                    ? new Cesium.ConstantPositionProperty(
-                                        c3, Cesium.ReferenceFrame.INERTIAL)
-                                    : c3,
+                                position: position,
                                 point: {
                                     pixelSize: 11,
                                     color: Cesium.Color.YELLOW,
