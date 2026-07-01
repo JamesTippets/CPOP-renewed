@@ -21,6 +21,12 @@ public sealed partial class EventDetailViewModel : ObservableObject
     [ObservableProperty] private LoiteringEventEntity? _event;
     [ObservableProperty] private string _objectALabel = "—";
     [ObservableProperty] private string _objectBLabel = "—";
+    [ObservableProperty] private string _objectAType  = "—";
+    [ObservableProperty] private string _objectBType  = "—";
+    [ObservableProperty] private string _objectASize  = "—";
+    [ObservableProperty] private string _objectBSize  = "—";
+    [ObservableProperty] private string _objectATle   = "—";
+    [ObservableProperty] private string _objectBTle   = "—";
     [ObservableProperty] private double _minRangeKm;
     [ObservableProperty] private string _closeApproach = "—";
     [ObservableProperty] private double _durationMinutes;
@@ -89,6 +95,7 @@ public sealed partial class EventDetailViewModel : ObservableObject
         CaLabel = string.Empty;
         SatLabelA = SatLabelB = string.Empty;
         OrbitStartIsoA = OrbitStartIsoB = ClockStartIso = ClockStopIso = CaTimeIso = string.Empty;
+        ObjectAType = ObjectBType = ObjectASize = ObjectBSize = ObjectATle = ObjectBTle = "—";
 
         await using var db = _factory.CreateDbContext();
         var ev = await db.LoiteringEvents.FindAsync(eventId);
@@ -105,6 +112,12 @@ public sealed partial class EventDetailViewModel : ObservableObject
 
         ObjectALabel = catA is not null ? $"{ev.NoradIdA} {catA.Name}" : ev.NoradIdA.ToString();
         ObjectBLabel = catB is not null ? $"{ev.NoradIdB} {catB.Name}" : ev.NoradIdB.ToString();
+        ObjectAType  = catA?.ObjectType ?? "—";
+        ObjectBType  = catB?.ObjectType ?? "—";
+        ObjectASize  = FormatRegime(catA?.Regime);
+        ObjectBSize  = FormatRegime(catB?.Regime);
+        ObjectATle   = catA is not null ? FormatTle(catA) : "—";
+        ObjectBTle   = catB is not null ? FormatTle(catB) : "—";
         SatLabelA = string.IsNullOrEmpty(catA?.Name) ? ev.NoradIdA.ToString() : catA!.Name;
         SatLabelB = string.IsNullOrEmpty(catB?.Name) ? ev.NoradIdB.ToString() : catB!.Name;
 
@@ -220,6 +233,47 @@ public sealed partial class EventDetailViewModel : ObservableObject
             R: dx * rx + dy * ry + dz * rz,
             I: dx * ix + dy * iy + dz * iz,
             C: dx * hx + dy * hy + dz * hz);
+    }
+
+    private static string FormatRegime(string? regime) =>
+        regime is null or "Unknown" ? "—" : regime.ToUpperInvariant();
+
+    private static string FormatTle(CatalogObjectEntity c)
+    {
+        // Epoch: YYDDD.FFFFFFFF (14 chars)
+        var ep = c.EpochUtc;
+        string epoch = $"{ep.Year % 100:D2}{ep.DayOfYear:D3}.{ep.TimeOfDay.TotalDays:F8}";
+
+        // Intl designator: strip dashes, take last 8 chars, pad to 8
+        string intl = (c.IntlDesignator ?? "").Replace("-", "");
+        intl = (intl.Length > 8 ? intl[^8..] : intl).PadRight(8);
+
+        // Ndot/2 as ±.NNNNNNNN (OMM MEAN_MOTION_DOT already stores ndot/2)
+        double nd = c.MeanMotionDotRevPerDay;
+        string ndotStr = $"{(nd >= 0 ? " " : "-")}.{(long)(Math.Abs(nd) * 1e8):D8}";
+
+        // Nddot/6 and BStar in ±NNNNN±N scientific form (OMM stores the divided values)
+        string nddotStr = FormatSciTle(c.MeanMotionDdotRevPerDay);
+        string bstarStr = FormatSciTle(c.BStar);
+
+        // Eccentricity: 7-digit integer, no decimal
+        string ecc = ((long)(c.Eccentricity * 1e7)).ToString("D7");
+
+        string line1 = $"1 {c.NoradId:D5}U {intl} {epoch} {ndotStr} {nddotStr} {bstarStr} {c.EphemerisType}    0";
+        string line2 = $"2 {c.NoradId:D5} {c.InclinationDeg,8:F4} {c.RaanDeg,8:F4} {ecc} {c.ArgPerigeeDeg,8:F4} {c.MeanAnomalyDeg,8:F4} {c.MeanMotionRevPerDay,11:F8}    0";
+        return $"{line1}\n{line2}";
+    }
+
+    private static string FormatSciTle(double v)
+    {
+        if (v == 0.0) return " 00000-0";
+        char sign  = v >= 0 ? ' ' : '-';
+        double abs = Math.Abs(v);
+        int exp    = (int)Math.Floor(Math.Log10(abs)) + 1;
+        int mant   = (int)Math.Round(abs * Math.Pow(10, 5 - exp));
+        if (mant >= 100000) { mant /= 10; exp++; }
+        char expSign = exp >= 0 ? '+' : '-';
+        return $"{sign}{mant:D5}{expSign}{Math.Abs(exp)}";
     }
 
     private static MeanElements EntityToElements(CatalogObjectEntity c) => new(

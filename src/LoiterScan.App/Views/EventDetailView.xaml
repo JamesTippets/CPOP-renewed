@@ -18,16 +18,80 @@
             <TextBlock Text="Event Detail" FontSize="16" FontWeight="Bold" Margin="0 0 0 12"/>
 
             <UniformGrid Columns="2" Margin="0 0 0 8">
+                <!-- SatID A -->
                 <Border Background="#E3F2FD" CornerRadius="4" Padding="10" Margin="0 0 4 0">
                     <StackPanel>
                         <TextBlock Text="SatID A" Foreground="#555" FontSize="11"/>
-                        <TextBlock Text="{Binding ObjectALabel}" FontWeight="Bold" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding ObjectALabel}" FontWeight="Bold" TextWrapping="Wrap"
+                                   Margin="0 1 0 5"/>
+                        <!-- Type and Size side by side -->
+                        <Grid Margin="0 0 0 4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0 0 4 0">
+                                <TextBlock Text="Type" Foreground="#777" FontSize="9"/>
+                                <TextBlock Text="{Binding ObjectAType}" FontSize="10" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Regime" Foreground="#777" FontSize="9"/>
+                                <TextBlock Text="{Binding ObjectASize}" FontSize="10"/>
+                            </StackPanel>
+                        </Grid>
+                        <!-- TLE -->
+                        <TextBlock Text="TLE" Foreground="#777" FontSize="9" Margin="0 0 0 1"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding ObjectATle}" FontFamily="Consolas" FontSize="8.5"
+                                       TextWrapping="Wrap" Foreground="#333"/>
+                            <Button Grid.Column="1" x:Name="CopyTleAButton" Content="⎘" ToolTip="Copy TLE to clipboard"
+                                    Click="OnCopyTleAClick"
+                                    Margin="4 0 0 0" Padding="4 2" FontSize="18"
+                                    Background="#E0E0E0" BorderBrush="#BDBDBD"
+                                    Cursor="Hand" VerticalAlignment="Top"/>
+                        </Grid>
                     </StackPanel>
                 </Border>
+                <!-- SatID B -->
                 <Border Background="#E3F2FD" CornerRadius="4" Padding="10" Margin="4 0 0 0">
                     <StackPanel>
                         <TextBlock Text="SatID B" Foreground="#555" FontSize="11"/>
-                        <TextBlock Text="{Binding ObjectBLabel}" FontWeight="Bold" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding ObjectBLabel}" FontWeight="Bold" TextWrapping="Wrap"
+                                   Margin="0 1 0 5"/>
+                        <!-- Type and Size side by side -->
+                        <Grid Margin="0 0 0 4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0 0 4 0">
+                                <TextBlock Text="Type" Foreground="#777" FontSize="9"/>
+                                <TextBlock Text="{Binding ObjectBType}" FontSize="10" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Regime" Foreground="#777" FontSize="9"/>
+                                <TextBlock Text="{Binding ObjectBSize}" FontSize="10"/>
+                            </StackPanel>
+                        </Grid>
+                        <!-- TLE -->
+                        <TextBlock Text="TLE" Foreground="#777" FontSize="9" Margin="0 0 0 1"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding ObjectBTle}" FontFamily="Consolas" FontSize="8.5"
+                                       TextWrapping="Wrap" Foreground="#333"/>
+                            <Button Grid.Column="1" x:Name="CopyTleBButton" Content="⎘" ToolTip="Copy TLE to clipboard"
+                                    Click="OnCopyTleBClick"
+                                    Margin="4 0 0 0" Padding="4 2" FontSize="18"
+                                    Background="#E0E0E0" BorderBrush="#BDBDBD"
+                                    Cursor="Hand" VerticalAlignment="Top"/>
+                        </Grid>
                     </StackPanel>
                 </Border>
             </UniformGrid>

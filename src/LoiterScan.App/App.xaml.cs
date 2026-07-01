@@ -51,7 +51,6 @@ public partial class App : Application
         sc.AddSingleton<RunService>();
         sc.AddSingleton<CatalogStatusService>();
         sc.AddSingleton<RecurringPairsAnalyzer>();
-        sc.AddSingleton<TrendAnalyzer>();
 
         // ── ViewModels ─────────────────────────────────────────────────────
         sc.AddSingleton<DashboardViewModel>();

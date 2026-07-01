@@ -34,19 +34,23 @@
             </Border>
         </UniformGrid>
 
-        <!-- Trend chart -->
-        <sp:WpfPlot x:Name="TrendPlot" DockPanel.Dock="Top" Height="230" Margin="0 0 0 12"/>
+        <!-- Distribution chart — click a column header below to switch the visualised field -->
+        <sp:WpfPlot x:Name="DistributionPlot" DockPanel.Dock="Top" Height="230" Margin="0 0 0 12"/>
 
         <!-- Recurring pairs header -->
-        <TextBlock DockPanel.Dock="Top" Text="Recurring Pairs" FontSize="14" FontWeight="Bold" Margin="0 0 0 6"/>
+        <TextBlock DockPanel.Dock="Top" Text="Recurring Pairs  (click a column header to switch chart)"
+                   FontSize="14" FontWeight="Bold" Margin="0 0 0 6"/>
 
         <!-- Recurring pairs table -->
-        <DataGrid ItemsSource="{Binding RecurringPairs}"
+        <DataGrid x:Name="PairsGrid"
+                  ItemsSource="{Binding RecurringPairs}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   IsReadOnly="True"
+                  SelectionMode="Extended"
                   VirtualizingStackPanel.IsVirtualizing="True"
-                  EnableRowVirtualization="True">
+                  EnableRowVirtualization="True"
+                  Sorting="OnDataGridSorting">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="NORAD-A"        Binding="{Binding Pair.Low}"                          Width="90"/>
                 <DataGridTextColumn Header="NORAD-B"        Binding="{Binding Pair.High}"                         Width="90"/>
@@ -55,6 +59,7 @@
                 <DataGridTextColumn Header="First Seen"     Binding="{Binding FirstSeen, StringFormat='yyyy-MM-dd'}" Width="100"/>
                 <DataGridTextColumn Header="Last Seen"      Binding="{Binding LastSeen,  StringFormat='yyyy-MM-dd'}" Width="100"/>
                 <DataGridTextColumn Header="Min Range (km)" Binding="{Binding AllTimeMinRangeKm, StringFormat='F2'}" Width="110"/>
+                <DataGridTextColumn Header="Regime"         Binding="{Binding RegimeLabel}"                       Width="110"/>
                 <DataGridTextColumn Header="Trend"          Binding="{Binding Trend}"                             Width="80"/>
             </DataGrid.Columns>
         </DataGrid>

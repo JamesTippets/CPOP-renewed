@@ -14,6 +14,16 @@ public partial class EventDetailView : UserControl
     private EventDetailViewModel? _vm;
     private bool _cesiumPageReady;
 
+    private void OnCopyTleAClick(object sender, RoutedEventArgs e)
+    {
+        if (_vm?.ObjectATle is { } tle && tle != "—") Clipboard.SetText(tle);
+    }
+
+    private void OnCopyTleBClick(object sender, RoutedEventArgs e)
+    {
+        if (_vm?.ObjectBTle is { } tle && tle != "—") Clipboard.SetText(tle);
+    }
+
     private ScottPlot.Plottables.Marker? _rangePlayhead;
     private ScottPlot.Plottables.Marker? _ricPlayhead;
 

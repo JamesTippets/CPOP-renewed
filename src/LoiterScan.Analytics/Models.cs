@@ -37,7 +37,12 @@ public sealed record RecurringPairSummary(
     DateTime FirstSeen,
     DateTime LastSeen,
     double AllTimeMinRangeKm,
-    RangeTrend Trend);
+    RangeTrend Trend)
+{
+    public OrbitRegime RegimeA { get; init; } = OrbitRegime.Unknown;
+    public OrbitRegime RegimeB { get; init; } = OrbitRegime.Unknown;
+    public string RegimeLabel => $"{RegimeA}/{RegimeB}";
+}
 
 // ── TrendAnalyzer output ──────────────────────────────────────────────────────
 

@@ -110,6 +110,19 @@ public sealed class RunService(IDbContextFactory<LoiterScanDbContext> factory)
         return evs;
     }
 
+    public async Task<Dictionary<long, OrbitRegime>> GetRegimeMapAsync(IEnumerable<long> noradIds)
+    {
+        await using var db = factory.CreateDbContext();
+        var ids = noradIds.ToList();
+        var rows = await db.CatalogObjects
+            .Where(o => ids.Contains(o.NoradId))
+            .Select(o => new { o.NoradId, o.Regime })
+            .ToListAsync();
+        return rows.ToDictionary(
+            r => r.NoradId,
+            r => Enum.TryParse<OrbitRegime>(r.Regime, out var regime) ? regime : OrbitRegime.Unknown);
+    }
+
     public async Task<List<RunRecord>> GetAllRunRecordsAsync()
     {
         await using var db = factory.CreateDbContext();

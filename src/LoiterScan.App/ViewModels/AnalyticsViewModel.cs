@@ -2,18 +2,19 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using LoiterScan.Analytics;
 using LoiterScan.App.Services;
+using LoiterScan.Core.Models;
 
 namespace LoiterScan.App.ViewModels;
 
 /// <summary>
-/// Analytics view: recurring pairs summary and config-scoped event-count trends (spec §8).
-/// Trend chart data is exposed as arrays; the view code-behind renders the ScottPlot.
+/// Analytics view: recurring pairs summary with an interactive distribution chart.
+/// Clicking a column header switches which column is visualised; clicking a chart bar
+/// highlights the corresponding row in the DataGrid.
 /// </summary>
 public sealed partial class AnalyticsViewModel : ObservableObject
 {
     private readonly RunService              _runSvc;
     private readonly RecurringPairsAnalyzer  _recurringAnalyzer;
-    private readonly TrendAnalyzer           _trendAnalyzer;
 
     [ObservableProperty] private bool   _isLoading;
     [ObservableProperty] private int    _totalRuns;
@@ -21,25 +22,22 @@ public sealed partial class AnalyticsViewModel : ObservableObject
     [ObservableProperty] private int    _uniquePairs;
 
     public ObservableCollection<RecurringPairSummary> RecurringPairs { get; } = [];
-    public ObservableCollection<ConfigScopedTrend>    Trends          { get; } = [];
 
-    // Trend chart data (first config-scope, if any)
-    public double[]? TrendRunIndices  { get; private set; }
-    public double[]? TrendNewPairs     { get; private set; }
-    public double[]? TrendRecurPairs   { get; private set; }
-    public string[]? TrendRunLabels    { get; private set; }
+    // Parallel arrays for the distribution bar chart.
+    // Index i in each array corresponds to RecurringPairs[i] at the time the chart was built.
+    public double[]?               DistributionValues         { get; private set; }
+    public RecurringPairSummary[]? DistributionItems          { get; private set; }
+    public string[]?               DistributionLabels         { get; private set; }
+    /// <summary>Non-null for categorical histograms (e.g. Regime); ordered bin labels indexed by DistributionValues[i].</summary>
+    public string[]?               DistributionCategoryLabels { get; private set; }
+    public string                  SelectedColumn             { get; private set; } = "Min Range (km)";
 
-    /// <summary>Raised when trend chart data is ready for the view to refresh.</summary>
-    public event EventHandler? TrendChartReady;
+    public event EventHandler? DistributionChartReady;
 
-    public AnalyticsViewModel(
-        RunService              runSvc,
-        RecurringPairsAnalyzer  recurringAnalyzer,
-        TrendAnalyzer           trendAnalyzer)
+    public AnalyticsViewModel(RunService runSvc, RecurringPairsAnalyzer recurringAnalyzer)
     {
         _runSvc            = runSvc;
         _recurringAnalyzer = recurringAnalyzer;
-        _trendAnalyzer     = trendAnalyzer;
     }
 
     public async Task LoadAsync()
@@ -51,18 +49,25 @@ public sealed partial class AnalyticsViewModel : ObservableObject
             TotalRuns   = records.Count;
             TotalEvents = records.Sum(r => r.Events.Count);
 
-            var recurring = _recurringAnalyzer.Analyze(records);
-            UniquePairs   = recurring.Count;
+            var recurring = _recurringAnalyzer.Analyze(records)
+                .Where(p => p.AllTimeMinRangeKm > 0.0)
+                .ToList();
 
+            var allIds    = recurring.SelectMany(p => new[] { p.Pair.Low, p.Pair.High }).Distinct();
+            var regimeMap = await _runSvc.GetRegimeMapAsync(allIds);
+            var enriched  = recurring
+                .Select(p => p with {
+                    RegimeA = regimeMap.GetValueOrDefault(p.Pair.Low,  OrbitRegime.Unknown),
+                    RegimeB = regimeMap.GetValueOrDefault(p.Pair.High, OrbitRegime.Unknown),
+                })
+                .ToList();
+
+            UniquePairs = enriched.Count;
             RecurringPairs.Clear();
-            foreach (var p in recurring) RecurringPairs.Add(p);
+            foreach (var p in enriched) RecurringPairs.Add(p);
 
-            var trends = _trendAnalyzer.Analyze(records);
-            Trends.Clear();
-            foreach (var t in trends) Trends.Add(t);
-
-            BuildTrendChartData(trends);
-            TrendChartReady?.Invoke(this, EventArgs.Empty);
+            BuildDistributionChart("Min Range (km)");
+            DistributionChartReady?.Invoke(this, EventArgs.Empty);
         }
         finally
         {
@@ -70,20 +75,72 @@ public sealed partial class AnalyticsViewModel : ObservableObject
         }
     }
 
-    private void BuildTrendChartData(IReadOnlyList<ConfigScopedTrend> trends)
+    /// <summary>Switch the distribution chart to a different column. Called from the view on column header click.</summary>
+    public void SelectColumn(string column)
     {
-        // Use the largest config-scope for the primary trend chart
-        var scope = trends.MaxBy(t => t.Points.Count);
-        if (scope is null || scope.Points.Count == 0)
+        if (column is "NORAD-A" or "NORAD-B" or "Trend") return;
+        BuildDistributionChart(column);
+        DistributionChartReady?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void BuildDistributionChart(string column)
+    {
+        if (RecurringPairs.Count == 0)
         {
-            TrendRunIndices = null;
+            DistributionValues         = null;
+            DistributionItems          = null;
+            DistributionLabels         = null;
+            DistributionCategoryLabels = null;
+            SelectedColumn             = column;
             return;
         }
 
-        int n = scope.Points.Count;
-        TrendRunIndices = Enumerable.Range(1, n).Select(i => (double)i).ToArray();
-        TrendNewPairs   = scope.Points.Select(p => (double)p.NewPairs).ToArray();
-        TrendRecurPairs = scope.Points.Select(p => (double)p.RecurringPairs).ToArray();
-        TrendRunLabels  = scope.Points.Select(p => p.StartedAt.ToLocalTime().ToString("MM-dd")).ToArray();
+        var items = RecurringPairs.ToArray();
+        DistributionCategoryLabels = null;
+
+        double[] values;
+        switch (column)
+        {
+            case "Runs":
+                values = items.Select(p => (double)p.RecurrenceCount).ToArray();
+                break;
+            case "Episodes":
+                values = items.Select(p => (double)p.EpisodeCount).ToArray();
+                break;
+            case "First Seen":
+                var firstBase = items.Min(p => p.FirstSeen.Date);
+                values = items.Select(p => (p.FirstSeen.Date - firstBase).TotalDays).ToArray();
+                break;
+            case "Last Seen":
+                var lastBase = items.Min(p => p.LastSeen.Date);
+                values = items.Select(p => (p.LastSeen.Date - lastBase).TotalDays).ToArray();
+                break;
+            case "Regime":
+            {
+                var combos     = new List<string>();
+                var comboIndex = new Dictionary<string, int>(StringComparer.Ordinal);
+                foreach (var item in items)
+                {
+                    string label = item.RegimeLabel;
+                    if (!comboIndex.ContainsKey(label))
+                    {
+                        comboIndex[label] = combos.Count;
+                        combos.Add(label);
+                    }
+                }
+                values = items.Select(p => (double)comboIndex[p.RegimeLabel]).ToArray();
+                DistributionCategoryLabels = combos.ToArray();
+                break;
+            }
+            default:
+                values = items.Select(p => p.AllTimeMinRangeKm).ToArray();
+                column = "Min Range (km)";
+                break;
+        }
+
+        DistributionValues = values;
+        DistributionItems  = items;
+        DistributionLabels = items.Select(p => $"{p.Pair.Low}/{p.Pair.High}").ToArray();
+        SelectedColumn     = column;
     }
 }
